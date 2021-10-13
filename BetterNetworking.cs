@@ -37,7 +37,7 @@ namespace Mod_ImprovedNetworking {
                 "NetworkUpdateRate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "(Default: 1.0) Allows you to reduce network strain by reducing the number of updates your computer sends out. As of Patch 0.203.11: 1.0=20 updates/second, 0.1=2 updates/second"
+                    "You can reduce network strain by reducing the number of updates your computer sends out. Values are correct as of patch 0.203.11."
                 )
             );
         }
