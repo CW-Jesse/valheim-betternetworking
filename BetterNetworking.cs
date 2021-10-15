@@ -1,19 +1,15 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
-using UnityEngine;
 using Steamworks;
 
-using K4os.Compression.LZ4;
-using System.Reflection;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System;
-using BepInEx.Logging;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.5.0")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.5.1")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
@@ -76,7 +72,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "You can reduce network strain by reducing the number of updates your computer sends out. Listed values are correct as of patch 0.203.11."
+                    "You can reduce network strain by reducing how frequently your computer sends out updates. Listed values are correct as of patch 0.203.11."
                 ));
 
             configNetworkSendRateMin = Config.Bind(
@@ -108,22 +104,10 @@ namespace CW_Jesse.BetterNetworking {
             configNetworkSendRateSettings_Listen();
             }
 
-        private static bool configNetworkSendRates_listening = false;
         public static void configNetworkSendRateSettings_Listen() {
-            if (!configNetworkSendRates_listening) {
-                configNetworkSendRates_listening = true;
-                configNetworkSendRateMin.SettingChanged += ConfigNetworkSendRateMin_SettingChanged;
-                configNetworkSendRateMax.SettingChanged += ConfigNetworkSendRateMax_SettingChanged;
-                BN_Logger.LogInfo("Started listening for user changes to NetworkSendRates");
-            }
-        }
-        public static void configNetworkSendRateSettings_Unlisten() {
-            if (configNetworkSendRates_listening) {
-                configNetworkSendRates_listening = false;
-                configNetworkSendRateMin.SettingChanged -= ConfigNetworkSendRateMin_SettingChanged;
-                configNetworkSendRateMax.SettingChanged -= ConfigNetworkSendRateMax_SettingChanged;
-                BN_Logger.LogInfo("Stopped listening for user changes to NetworkSendRates");
-            }
+            configNetworkSendRateMin.SettingChanged += ConfigNetworkSendRateMin_SettingChanged;
+            configNetworkSendRateMax.SettingChanged += ConfigNetworkSendRateMax_SettingChanged;
+            BN_Logger.LogInfo("Started listening for user changes to NetworkSendRates");
         }
 
         private static void ConfigNetworkSendRateMin_SettingChanged(object sender, EventArgs e) {
@@ -131,18 +115,14 @@ namespace CW_Jesse.BetterNetworking {
                 configNetworkSendRateMax.Value = configNetworkSendRateMin.Value;
                 BN_Logger.logger.LogInfo("Maximum network send rate automatically increased");
             }
-            configNetworkSendRateSettings_Unlisten();
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
-            configNetworkSendRateSettings_Listen();
         }
         private static void ConfigNetworkSendRateMax_SettingChanged(object sender, EventArgs e) {
             if (configNetworkSendRateMax.Value > configNetworkSendRateMin.Value) {
                 configNetworkSendRateMin.Value = configNetworkSendRateMax.Value;
-                BN_Logger.logger.LogInfo("Minimum network send rate automatically increased");
+                BN_Logger.logger.LogInfo("Minimum network send rate automatically decreased");
             }
-            configNetworkSendRateSettings_Unlisten();
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
-            configNetworkSendRateSettings_Listen();
         }
 
         [HarmonyPatch(typeof(ZDOMan), "SendZDOToPeers")]
@@ -271,12 +251,9 @@ namespace CW_Jesse.BetterNetworking {
 
             static void Postfix() {
                 BN_Logger.LogInfo("Network settings overwritten by Valheim; setting them to Better Networking values");
-                BetterNetworking.configNetworkSendRateSettings_Unlisten();
 
                 NetworkSendRate_Patch.SetSendRateMinFromConfig();
                 NetworkSendRate_Patch.SetSendRateMaxFromConfig();
-
-                BetterNetworking.configNetworkSendRateSettings_Listen();
             }
         }
 
