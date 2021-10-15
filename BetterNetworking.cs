@@ -9,7 +9,7 @@ using System;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.6.0")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.6.1")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
@@ -32,18 +32,20 @@ namespace CW_Jesse.BetterNetworking {
         private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMin;
         private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMax;
         private enum Options_NetworkSendRate {
-            [Description("400% (512 KB/s | 4 Mbit/s)")]
+            [Description("400% (600 KB/s | 4.8 Mbit/s)")]
             _400,
-            [Description("200% (256 KB/s | 2 Mbit/s)")]
+            [Description("200% (300 KB/s | 2.4 Mbit/s)")]
             _200,
-            [Description("100% (128 KB/s | 1 Mbit/s)")]
+            [Description("100% (150 KB/s | 1.2 Mbit/s)")]
             _100,
-            [Description("50% (64 KB/s | 0.5 Mbit/s)")]
+            [Description("50% (75 KB/s | 0.6 Mbit/s)")]
             _50
         }
 
         private static ConfigEntry<Options_NetworkQueueSize> configNetworkQueueSize;
         private enum Options_NetworkQueueSize {
+            [Description("300% (30 KB)")]
+            _300,
             [Description("200% (20 KB)")]
             _200,
             [Description("150% (15 KB)")]
@@ -80,7 +82,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Minimum Send Rate",
                 Options_NetworkSendRate._100,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 128 KB/s as of patch 0.203.11."
+                    "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
 
             configNetworkSendRateMax = Config.Bind(
@@ -88,7 +90,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Maximum Send Rate",
                 Options_NetworkSendRate._100,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 128 KB/s as of patch 0.203.11."
+                    "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
 
             configNetworkQueueSize = Config.Bind(
@@ -293,6 +295,9 @@ namespace CW_Jesse.BetterNetworking {
 #endif
 
                 switch (configNetworkQueueSize.Value) {
+                    case Options_NetworkQueueSize._300:
+                        __result /= 3;
+                        break;
                     case Options_NetworkQueueSize._200:
                         __result /= 2;
                         break;
