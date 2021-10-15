@@ -13,7 +13,7 @@ using BepInEx.Logging;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.4.0")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.5.0")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
@@ -46,6 +46,20 @@ namespace CW_Jesse.BetterNetworking {
             _50
         }
 
+        private static ConfigEntry<Options_NetworkQueueSize> configNetworkQueueSize;
+        private enum Options_NetworkQueueSize {
+            [Description("200% (20 KB)")]
+            _200,
+            [Description("150% (15 KB)")]
+            _150,
+            [Description("100% (10 KB)")]
+            _100,
+            [Description("80% (8 KB)")]
+            _80,
+            [Description("60% (6 KB)")]
+            _60,
+        }
+
         private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
 
         void Awake() {
@@ -55,17 +69,15 @@ namespace CW_Jesse.BetterNetworking {
                 "Logging",
                 "Log Info Messages",
                 false,
-                "True: Verbose logs.\nFalse: Only log warnings and errors."
-                );
+                "True: Verbose logs.\nFalse: Only log warnings and errors.");
 
             configNetworkUpdateRate = Config.Bind(
                 "Networking",
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "You can reduce network strain by reducing the number of updates your computer sends out. Displayed values are correct as of patch 0.203.11."
-                )
-            );
+                    "You can reduce network strain by reducing the number of updates your computer sends out. Listed values are correct as of patch 0.203.11."
+                ));
 
             configNetworkSendRateMin = Config.Bind(
                 "Networking",
@@ -73,8 +85,7 @@ namespace CW_Jesse.BetterNetworking {
                 Options_NetworkSendRate._100,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 128 KB/s as of patch 0.203.11."
-                )
-            );
+                ));
 
             configNetworkSendRateMax = Config.Bind(
                 "Networking",
@@ -82,8 +93,15 @@ namespace CW_Jesse.BetterNetworking {
                 Options_NetworkSendRate._100,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 128 KB/s as of patch 0.203.11."
-                )
-            );
+                ));
+
+            configNetworkQueueSize = Config.Bind(
+                "Networking",
+                "Queue Size",
+                Options_NetworkQueueSize._100,
+                new ConfigDescription(
+                    "With low upload speeds, lowering your queue size allows Valheim to better prioritize outgoing data. Listed values are correct as of patch 0.203.11."
+                ));
 
             harmony.PatchAll();
 
@@ -262,5 +280,28 @@ namespace CW_Jesse.BetterNetworking {
             }
         }
 
+        [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.GetSendQueueSize))]
+        class NetworkQueueSize_Patch {
+            static void Postfix(ref int __result) {
+                //int originalQueueSize = __result;
+
+                switch (configNetworkQueueSize.Value) {
+                    case Options_NetworkQueueSize._200:
+                        __result /= 2;
+                        break;
+                    case Options_NetworkQueueSize._150:
+                        __result = (int)(__result / 1.5);
+                        break;
+                    case Options_NetworkQueueSize._80:
+                        __result = (int)(__result / 0.8);
+                        break;
+                    case Options_NetworkQueueSize._60:
+                        __result = (int)(__result / 0.6);
+                        break;
+                }
+
+                //BN_Logger.LogInfo($"Queue size reported as {__result} instead of {originalQueueSize}");
+            }
+        }
     }
 }
