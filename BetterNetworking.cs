@@ -13,7 +13,7 @@ using BepInEx.Logging;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.3.1")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.4.0")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
@@ -33,16 +33,9 @@ namespace CW_Jesse.BetterNetworking {
             _20
         }
 
-        private static ConfigEntry<Options_NetworkSendRateMin> configNetworkSendRateMin;
-        private enum Options_NetworkSendRateMin {
-            [Description("100% (128 KB/s | 1 Mbit/s))")]
-            _100,
-            [Description("50% (64 KB/s | 0.5 Mbit/s))")]
-            _50
-        }
-
-        private static ConfigEntry<Options_NetworkSendRateMax> configNetworkSendRateMax;
-        private enum Options_NetworkSendRateMax {
+        private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMin;
+        private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMax;
+        private enum Options_NetworkSendRate {
             [Description("400% (512 KB/s | 4 Mbit/s)")]
             _400,
             [Description("200% (256 KB/s | 2 Mbit/s)")]
@@ -77,7 +70,7 @@ namespace CW_Jesse.BetterNetworking {
             configNetworkSendRateMin = Config.Bind(
                 "Networking",
                 "Minimum Send Rate",
-                Options_NetworkSendRateMin._100,
+                Options_NetworkSendRate._100,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 128 KB/s as of patch 0.203.11."
                 )
@@ -86,7 +79,7 @@ namespace CW_Jesse.BetterNetworking {
             configNetworkSendRateMax = Config.Bind(
                 "Networking",
                 "Maximum Send Rate",
-                Options_NetworkSendRateMax._100,
+                Options_NetworkSendRate._100,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 128 KB/s as of patch 0.203.11."
                 )
@@ -116,17 +109,18 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         private static void ConfigNetworkSendRateMin_SettingChanged(object sender, EventArgs e) {
-            if (configNetworkSendRateMin.Value == Options_NetworkSendRateMin._100 &&
-                configNetworkSendRateMax.Value == Options_NetworkSendRateMax._50) {
-                configNetworkSendRateMax.Value = Options_NetworkSendRateMax._100;
+            if (configNetworkSendRateMin.Value < configNetworkSendRateMax.Value) {
+                configNetworkSendRateMax.Value = configNetworkSendRateMin.Value;
+                BN_Logger.logger.LogInfo("Maximum network send rate automatically increased");
             }
             configNetworkSendRateSettings_Unlisten();
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
             configNetworkSendRateSettings_Listen();
         }
         private static void ConfigNetworkSendRateMax_SettingChanged(object sender, EventArgs e) {
-            if (configNetworkSendRateMax.Value == Options_NetworkSendRateMax._50) {
-                configNetworkSendRateMin.Value = Options_NetworkSendRateMin._50;
+            if (configNetworkSendRateMax.Value > configNetworkSendRateMin.Value) {
+                configNetworkSendRateMin.Value = configNetworkSendRateMax.Value;
+                BN_Logger.logger.LogInfo("Minimum network send rate automatically increased");
             }
             configNetworkSendRateSettings_Unlisten();
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
@@ -167,7 +161,11 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMin {
                 get {
                     switch (configNetworkSendRateMin.Value) {
-                        case Options_NetworkSendRateMin._50:
+                        case Options_NetworkSendRate._400:
+                            return originalNetworkSendRateMin * 4;
+                        case Options_NetworkSendRate._200:
+                            return originalNetworkSendRateMin * 2;
+                        case Options_NetworkSendRate._50:
                             return originalNetworkSendRateMin / 2;
                     }
                     return originalNetworkSendRateMin;
@@ -176,11 +174,11 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMax {
                 get {
                     switch (configNetworkSendRateMax.Value) {
-                        case Options_NetworkSendRateMax._400:
+                        case Options_NetworkSendRate._400:
                             return originalNetworkSendRateMax * 4;
-                        case Options_NetworkSendRateMax._200:
+                        case Options_NetworkSendRate._200:
                             return originalNetworkSendRateMax * 2;
-                        case Options_NetworkSendRateMax._50:
+                        case Options_NetworkSendRate._50:
                             return originalNetworkSendRateMax / 2;
                     }
                     return originalNetworkSendRateMax;
