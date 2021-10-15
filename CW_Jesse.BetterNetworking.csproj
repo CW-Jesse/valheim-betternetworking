@@ -82,6 +82,7 @@
     <Compile Include="BetterNetworking.cs" />
     <Compile Include="BN_Logger.cs" />
     <Compile Include="BN_Patch_UpdateRate.cs" />
+    <Compile Include="BN_Patch_SendRate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

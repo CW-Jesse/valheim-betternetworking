@@ -3,8 +3,6 @@ using BepInEx.Configuration;
 using HarmonyLib;
 
 using System.ComponentModel;
-using System.Runtime.InteropServices;
-using System;
 
 namespace CW_Jesse.BetterNetworking {
 
