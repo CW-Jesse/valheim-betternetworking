@@ -1,5 +1,4 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
+﻿using BepInEx.Configuration;
 using HarmonyLib;
 using Steamworks;
 using System;
@@ -49,14 +48,14 @@ namespace CW_Jesse.BetterNetworking {
         private static void ConfigNetworkSendRateMin_SettingChanged(object sender, EventArgs e) {
             if (BetterNetworking.configNetworkSendRateMin.Value < BetterNetworking.configNetworkSendRateMax.Value) {
                 BetterNetworking.configNetworkSendRateMax.Value = BetterNetworking.configNetworkSendRateMin.Value;
-                BN_Logger.logger.LogInfo("Maximum network send rate automatically increased");
+                BN_Logger.LogInfo("Maximum network send rate automatically increased");
             }
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
         }
         private static void ConfigNetworkSendRateMax_SettingChanged(object sender, EventArgs e) {
             if (BetterNetworking.configNetworkSendRateMax.Value > BetterNetworking.configNetworkSendRateMin.Value) {
                 BetterNetworking.configNetworkSendRateMin.Value = BetterNetworking.configNetworkSendRateMax.Value;
-                BN_Logger.logger.LogInfo("Minimum network send rate automatically decreased");
+                BN_Logger.LogInfo("Minimum network send rate automatically decreased");
             }
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
         }

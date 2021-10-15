@@ -6,7 +6,7 @@ using System.ComponentModel;
 
 namespace CW_Jesse.BetterNetworking {
 
-    public class BN_Patch_UpdateRate : BaseUnityPlugin {
+    public class BN_Patch_UpdateRate {
         public enum Options_NetworkUpdateRates {
             [Description("100% (20 updates/second)")]
             _100,

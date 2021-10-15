@@ -1,8 +1,18 @@
-﻿using BepInEx.Logging;
+﻿using BepInEx.Configuration;
+using BepInEx.Logging;
 
 namespace CW_Jesse.BetterNetworking {
     class BN_Logger {
-        public static ManualLogSource logger;
+        private static ManualLogSource logger;
+
+        public static void Init(ManualLogSource logger, ConfigFile config) {
+            BN_Logger.logger = logger;
+            BetterNetworking.configLogMessages = config.Bind(
+                "Logging",
+                "Log Info Messages",
+                false,
+                "True: Verbose logs.\nFalse: Only log warnings and errors.");
+        }
 
         public static void LogError(object data) {
             BN_Logger.logger.LogError(data);
