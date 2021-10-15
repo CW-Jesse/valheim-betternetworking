@@ -9,7 +9,7 @@ using System;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.5.1")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.6.0")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
@@ -144,11 +144,12 @@ namespace CW_Jesse.BetterNetworking {
                         networkUpdateRate = 0.2f;
                         break;
                 }
+
                 dt *= networkUpdateRate;
             }
         }
 
-        [HarmonyPatch(typeof(SteamNetworkingUtils), nameof(SteamNetworkingUtils.SetConfigValue))]
+        [HarmonyPatch(typeof(SteamNetworkingUtils))]
         class NetworkSendRate_Patch {
             static private int originalNetworkSendRateMin = 0;
             static private bool originalNetworkSendRateMin_set = false;
@@ -203,17 +204,43 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             private static void SetSteamNetworkConfig(ESteamNetworkingConfigValue valueType, int value) {
+                if (ZNet.instance == null) {
+                    BN_Logger.LogWarning("Attempted to set Steam networking config value while disconnected");
+                    return;
+                }
+
                 GCHandle pinned_SendRate = GCHandle.Alloc(value, GCHandleType.Pinned);
-                SteamNetworkingUtils.SetConfigValue(
-                    valueType,
-                    ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
-                    IntPtr.Zero,
-                    ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32,
-                    pinned_SendRate.AddrOfPinnedObject()
-                    );
+
+                try {
+                    if (ZNet.instance.IsDedicated()) {
+                        BN_Logger.LogInfo("(dedicated server)");
+
+                        SteamGameServerNetworkingUtils.SetConfigValue(
+                            valueType,
+                            ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
+                            IntPtr.Zero,
+                            ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32,
+                            pinned_SendRate.AddrOfPinnedObject()
+                            );
+                    } else {
+                        BN_Logger.LogInfo("(non-dedicated server)");
+
+                        SteamNetworkingUtils.SetConfigValue(
+                            valueType,
+                            ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
+                            IntPtr.Zero,
+                            ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32,
+                            pinned_SendRate.AddrOfPinnedObject()
+                            );
+                    }
+                } catch {
+                    BN_Logger.LogError("Unable to set networking config; please notify the mod author");
+                }
+
                 pinned_SendRate.Free();
             }
 
+            [HarmonyPatch(nameof(SteamNetworkingUtils.SetConfigValue))]
             static void Prefix(
                 ESteamNetworkingConfigValue eValue,
                 ESteamNetworkingConfigScope eScopeType,
@@ -238,6 +265,7 @@ namespace CW_Jesse.BetterNetworking {
                             if (!originalNetworkSendRateMax_set) {
                                 originalNetworkSendRateMax_set = true;
                                 originalNetworkSendRateMax = Marshal.ReadInt32(pArg);
+
                                 BN_Logger.LogMessage($"Valheim's default NetworkSendRateMax is {originalNetworkSendRateMin}");
                             }
                             break;
@@ -260,7 +288,9 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.GetSendQueueSize))]
         class NetworkQueueSize_Patch {
             static void Postfix(ref int __result) {
-                //int originalQueueSize = __result;
+#if DEBUG
+                int originalQueueSize = __result;
+#endif
 
                 switch (configNetworkQueueSize.Value) {
                     case Options_NetworkQueueSize._200:
@@ -277,7 +307,9 @@ namespace CW_Jesse.BetterNetworking {
                         break;
                 }
 
-                //BN_Logger.LogInfo($"Queue size reported as {__result} instead of {originalQueueSize}");
+#if DEBUG
+                BN_Logger.LogInfo($"Queue size reported as {__result} instead of {originalQueueSize}");
+#endif
             }
         }
     }

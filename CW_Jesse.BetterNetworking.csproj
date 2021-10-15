@@ -36,11 +36,13 @@
     <Reference Include="0Harmony">
       <HintPath>libs-Valheim\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="assembly_steamworks">
-      <HintPath>libs-Valheim\assembly_steamworks.dll</HintPath>
+    <Reference Include="assembly_steamworks, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>libs-Valheim\client\assembly_steamworks.dll</HintPath>
     </Reference>
-    <Reference Include="assembly_valheim">
-      <HintPath>libs-Valheim\assembly_valheim.dll</HintPath>
+    <Reference Include="assembly_valheim, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>libs-Valheim\client\assembly_valheim.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>libs-Valheim\BepInEx.dll</HintPath>
