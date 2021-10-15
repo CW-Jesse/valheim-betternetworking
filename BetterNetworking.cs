@@ -9,25 +9,14 @@ using System;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.6.1")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.6.2")]
     [BepInProcess("valheim.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
-        public static ConfigEntry<bool> configLogMessages;
+        private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
 
-        private static ConfigEntry<Options_NetworkUpdateRates> configNetworkUpdateRate;
-        private enum Options_NetworkUpdateRates {
-            [Description("100% (20 updates/second)")]
-            _100,
-            [Description("80% (16 updates/second)")]
-            _80,
-            [Description("60% (12 updates/second)")]
-            _60,
-            [Description("40% (8 updates/second)")]
-            _40,
-            [Description("20% (4 updates/second)")]
-            _20
-        }
+        public static ConfigEntry<bool> configLogMessages;
+        public static ConfigEntry<BN_Patch_UpdateRate.Options_NetworkUpdateRates> configNetworkUpdateRate;
 
         private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMin;
         private static ConfigEntry<Options_NetworkSendRate> configNetworkSendRateMax;
@@ -58,24 +47,15 @@ namespace CW_Jesse.BetterNetworking {
             _60,
         }
 
-        private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
-
         void Awake() {
             BN_Logger.logger = base.Logger;
-
             configLogMessages = Config.Bind(
                 "Logging",
                 "Log Info Messages",
                 false,
                 "True: Verbose logs.\nFalse: Only log warnings and errors.");
 
-            configNetworkUpdateRate = Config.Bind(
-                "Networking",
-                "Update Rate",
-                Options_NetworkUpdateRates._100,
-                new ConfigDescription(
-                    "You can reduce network strain by reducing how frequently your computer sends out updates. Listed values are correct as of patch 0.203.11."
-                ));
+            BN_Patch_UpdateRate.InitConfig(Config);
 
             configNetworkSendRateMin = Config.Bind(
                 "Networking",
@@ -125,30 +105,6 @@ namespace CW_Jesse.BetterNetworking {
                 BN_Logger.logger.LogInfo("Minimum network send rate automatically decreased");
             }
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
-        }
-
-        [HarmonyPatch(typeof(ZDOMan), "SendZDOToPeers")]
-        class NetworkUpdateFrequency_Patch {
-
-            static void Prefix(ref float dt) {
-                float networkUpdateRate = 1.0f;
-                switch (configNetworkUpdateRate.Value) {
-                    case Options_NetworkUpdateRates._80:
-                        networkUpdateRate = 0.8f;
-                        break;
-                    case Options_NetworkUpdateRates._60:
-                        networkUpdateRate = 0.6f;
-                        break;
-                    case Options_NetworkUpdateRates._40:
-                        networkUpdateRate = 0.4f;
-                        break;
-                    case Options_NetworkUpdateRates._20:
-                        networkUpdateRate = 0.2f;
-                        break;
-                }
-
-                dt *= networkUpdateRate;
-            }
         }
 
         [HarmonyPatch(typeof(SteamNetworkingUtils))]
