@@ -203,15 +203,15 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             private static void SetSteamNetworkConfig(ESteamNetworkingConfigValue valueType, int value) {
-                GCHandle pinned_SendRateMax = GCHandle.Alloc(value, GCHandleType.Pinned);
+                GCHandle pinned_SendRate = GCHandle.Alloc(value, GCHandleType.Pinned);
                 SteamNetworkingUtils.SetConfigValue(
                     valueType,
                     ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
                     IntPtr.Zero,
                     ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32,
-                    pinned_SendRateMax.AddrOfPinnedObject()
+                    pinned_SendRate.AddrOfPinnedObject()
                     );
-                pinned_SendRateMax.Free();
+                pinned_SendRate.Free();
             }
 
             static void Prefix(
