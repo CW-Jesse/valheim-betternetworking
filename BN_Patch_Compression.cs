@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using HarmonyLib;
 using Steamworks;
+using K4os.Compression.LZ4;
+using System.IO;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -40,34 +42,112 @@ namespace CW_Jesse.BetterNetworking {
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
-        private static bool SendQueuedCompressedPackages(ZSteamSocket __instance, Queue<Byte[]> ___m_sendQueue, int ___m_totalSent, HSteamNetConnection ___m_con) {
-            BN_Logger.LogMessage("Successfully hijacked data sending");
-
+        private static bool SendCompressedPackages(ZSteamSocket __instance, Queue<Byte[]> ___m_sendQueue, int ___m_totalSent, HSteamNetConnection ___m_con) {
             if (!__instance.IsConnected()) {
                 return false;
             }
             while (___m_sendQueue.Count > 0) {
-                byte[] array = ___m_sendQueue.Peek();
-                IntPtr intPtr = Marshal.AllocHGlobal(array.Length);
-                Marshal.Copy(array, 0, intPtr, array.Length);
-                long num;
+
+                MemoryStream compressedPackagesStream = new MemoryStream();
+                BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream);
+
+                int packageCount = ___m_sendQueue.Count;
+
+                compressedPackagesWriter.Write(___m_sendQueue.Count); // number of packages
+
+                foreach (byte[] packageByteArray in ___m_sendQueue) {
+                    compressedPackagesWriter.Write(packageByteArray.Length); // length of package
+                    compressedPackagesWriter.Write(packageByteArray); // package
+                }
+
+                byte[] compressedPackages = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
+
+                IntPtr intPtr = Marshal.AllocHGlobal(compressedPackages.Length);
+                Marshal.Copy(compressedPackages, 0, intPtr, compressedPackages.Length);
+                long messagesSent;
                 EResult eresult;
                 if (BN_Utils.IsDedicated()) {
-                    eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)array.Length, 8, out num);
+                    eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSent);
                 } else {
-                    eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)array.Length, 8, out num);
+                    eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSent);
                 }
                 Marshal.FreeHGlobal(intPtr);
                 if (eresult != EResult.k_EResultOK) {
-                    ZLog.Log("Failed to send data " + eresult);
+                    BN_Logger.LogError("Failed to send data: " + eresult);
                     return false;
                 }
-                ___m_totalSent += array.Length;
-                ___m_sendQueue.Dequeue();
+                ___m_totalSent += compressedPackages.Length;
+                for (int i = 0; i < packageCount; i++) {
+                    ___m_sendQueue.Dequeue(); // TODO: inefficient
+                }
+
+                BN_Logger.LogInfo("Sent compressed data");
             }
 
             return false;
          }
+
+        private static Queue<ZPackage> packages = new Queue<ZPackage>();
+
+        [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
+        [HarmonyPrefix]
+        private static bool ReceiveCompressedPackages(ref ZPackage __result, ZSteamSocket __instance, HSteamNetConnection ___m_con, int ___m_totalRecv, bool ___m_gotData) {
+            ZPackage package;
+            
+            if (packages.Count > 0) {
+                package = packages.Dequeue();
+                ___m_totalRecv += package.Size();
+                ___m_gotData = true;
+
+                __result = package;
+                return false;
+            }
+            
+            if (!__instance.IsConnected()) {
+                __result = null;
+                return false;
+            }
+            IntPtr[] array = new IntPtr[1];
+
+            bool receivedMessages = false;
+            if (BN_Utils.IsDedicated()) {
+                receivedMessages = SteamGameServerNetworkingSockets.ReceiveMessagesOnConnection(___m_con, array, 1) == 1;
+            } else {
+                receivedMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(___m_con, array, 1) == 1;
+            }
+
+            if (receivedMessages) {
+                SteamNetworkingMessage_t steamNetworkingMessage_t = Marshal.PtrToStructure<SteamNetworkingMessage_t>(array[0]);
+
+
+                byte[] compressedPackages = new byte[steamNetworkingMessage_t.m_cbSize];
+                Marshal.Copy(steamNetworkingMessage_t.m_pData, compressedPackages, 0, steamNetworkingMessage_t.m_cbSize);
+
+                byte[] uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
+
+                steamNetworkingMessage_t.m_pfnRelease = array[0];
+                steamNetworkingMessage_t.Release();
+
+                MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages);
+                BinaryReader uncompressedPackagesReader = new BinaryReader(uncompressedPackagesStream);
+
+                int packageCount = uncompressedPackagesReader.ReadInt32();
+                for (int i = 0; i < packageCount; i++){
+                    int packageLength = uncompressedPackagesReader.ReadInt32();
+                    byte[] packageByteArray = uncompressedPackagesReader.ReadBytes(packageLength);
+                    packages.Enqueue(new ZPackage(packageByteArray));
+                }
+
+                package = packages.Dequeue();
+                ___m_totalRecv += package.Size();
+                ___m_gotData = true;
+
+                __result = package;
+                return false;
+            }
+            __result = null;
+            return false;
+        }
 
         public static void AddPeer(ZNetPeer peer, int compressionVersion) {
             bool peerHasCompression = compressionVersion == VERSION;
