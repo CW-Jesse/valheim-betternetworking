@@ -55,8 +55,11 @@ namespace CW_Jesse.BetterNetworking {
 
                 compressedPackagesWriter.Write(___m_sendQueue.Count); // number of packages
 
+                int uncompressedDataLength = 0;
+
                 foreach (byte[] packageByteArray in ___m_sendQueue) {
                     compressedPackagesWriter.Write(packageByteArray.Length); // length of package
+                    uncompressedDataLength += packageByteArray.Length;
                     compressedPackagesWriter.Write(packageByteArray); // package
                 }
 
@@ -81,7 +84,7 @@ namespace CW_Jesse.BetterNetworking {
                     ___m_sendQueue.Dequeue(); // TODO: inefficient
                 }
 
-                BN_Logger.LogInfo("Sent compressed data");
+                BN_Logger.LogMessage($"Compressed data sent: {uncompressedDataLength} bytes compressed into {compressedPackages.Length} bytes");
             }
 
             return false;
@@ -124,6 +127,8 @@ namespace CW_Jesse.BetterNetworking {
                 Marshal.Copy(steamNetworkingMessage_t.m_pData, compressedPackages, 0, steamNetworkingMessage_t.m_cbSize);
 
                 byte[] uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
+
+                BN_Logger.LogMessage($"Compressed data received: {steamNetworkingMessage_t.m_cbSize} decompressed into {uncompressedPackages.Length}");
 
                 steamNetworkingMessage_t.m_pfnRelease = array[0];
                 steamNetworkingMessage_t.Release();
