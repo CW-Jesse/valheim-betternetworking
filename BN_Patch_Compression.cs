@@ -45,7 +45,6 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPrefix]
         private static bool SendCompressedPackages(ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
             if (!__instance.IsConnected()) {
-                BN_Logger.LogInfo("Compressed Send: Not connected");
                 return false;
             }
 
@@ -93,7 +92,10 @@ namespace CW_Jesse.BetterNetworking {
                     ___m_sendQueue.Dequeue(); // TODO: inefficient
                 }
 
-                BN_Logger.LogInfo($"Compressed Send:    {uncompressedPackagesLength} B -> {compressedPackages.Length} B");
+                if (uncompressedPackagesLength > 256) { // small messages don't compress well but they also don't matter
+                    float compressedSizePercentage = ((float)compressedPackages.Length / (float)uncompressedPackagesLength) * 100;
+                    BN_Logger.LogInfo($"Compressed Send: {uncompressedPackagesLength} B was compressed to {compressedSizePercentage.ToString("0")}%");
+                }
             }
 
             return false;
@@ -115,7 +117,6 @@ namespace CW_Jesse.BetterNetworking {
             }
             
             if (!__instance.IsConnected()) {
-                BN_Logger.LogWarning("Compressed Receive: Not connected");
                 __result = null;
                 return false;
             }
@@ -137,7 +138,10 @@ namespace CW_Jesse.BetterNetworking {
 
                 byte[] uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
 
-                BN_Logger.LogInfo($"Compressed Receive: {steamNetworkingMessage_t.m_cbSize} B -> {uncompressedPackages.Length} B");
+                if (uncompressedPackages.Length > 256) { // small messages don't compress well but they also don't matter
+                    float compressedSizePercentage = ((float)steamNetworkingMessage_t.m_cbSize / (float)uncompressedPackages.Length) * 100;
+                    BN_Logger.LogInfo($"Compressed Receive: {uncompressedPackages.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
+                }
 
                 steamNetworkingMessage_t.m_pfnRelease = array[0];
                 steamNetworkingMessage_t.Release();
