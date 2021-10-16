@@ -24,11 +24,12 @@ namespace CW_Jesse.BetterNetworking {
             peer.m_rpc.Invoke(RPC_GET_COMPRESSION_VERSION, new object[] {
                 BN_Patch_Compression.VERSION
             });
+            BN_Logger.LogMessage($"Compression version sent to {peer.m_playerName}: {BN_Patch_Compression.VERSION}");
         }
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPrefix]
-        private static void OnDisconnect(ZNetPeer peer) {
+        private static void OnDisconnect(ref ZNetPeer peer) {
             BN_Patch_Compression.RemovePeer(peer);
         }
         private static void RPC_GetCompressionVersion(ZRpc rpc, int compressionVersion) {
@@ -42,9 +43,9 @@ namespace CW_Jesse.BetterNetworking {
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
-        private static bool SendCompressedPackages(ZSteamSocket __instance, Queue<Byte[]> ___m_sendQueue, int ___m_totalSent, HSteamNetConnection ___m_con) {
-            
+        private static bool SendCompressedPackages(ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
             if (!__instance.IsConnected()) {
+                BN_Logger.LogInfo("Compressed Send: Not connected");
                 return false;
             }
 
@@ -57,7 +58,7 @@ namespace CW_Jesse.BetterNetworking {
                 using (MemoryStream compressedPackagesStream = new MemoryStream()) {
                     using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
 
-                        compressedPackagesWriter.Write(___m_sendQueue.Count); // number of packages
+                        compressedPackagesWriter.Write(packageArray.Length); // number of packages
 
                         for (int i = 0; i < packageArray.Length; i++) {
                             compressedPackagesWriter.Write(packageArray[i].Length); // length of package
@@ -84,15 +85,15 @@ namespace CW_Jesse.BetterNetworking {
                 Marshal.FreeHGlobal(intPtr);
 
                 if (eresult != EResult.k_EResultOK) {
-                    BN_Logger.LogError($"Failed to send data: {eresult}; please notify the mod author");
-                    return false;
+                    BN_Logger.LogError($"Compressed Send: {eresult}; please notify the mod author");
+                    return true;
                 }
                 ___m_totalSent += compressedPackages.Length;
                 for (int i = 0; i < packageArray.Length; i++) {
                     ___m_sendQueue.Dequeue(); // TODO: inefficient
                 }
 
-                BN_Logger.LogMessage($"Compressed data sent: {uncompressedPackagesLength} bytes compressed into {compressedPackages.Length} bytes");
+                BN_Logger.LogInfo($"Compressed Send:    {uncompressedPackagesLength} B -> {compressedPackages.Length} B");
             }
 
             return false;
@@ -102,11 +103,10 @@ namespace CW_Jesse.BetterNetworking {
 
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
         [HarmonyPrefix]
-        private static bool ReceiveCompressedPackages(ref ZPackage __result, ZSteamSocket __instance, HSteamNetConnection ___m_con, int ___m_totalRecv, bool ___m_gotData) {
-            ZPackage package;
-            
+        private static bool ReceiveCompressedPackages(ref ZPackage __result, ZSteamSocket __instance, ref HSteamNetConnection ___m_con, ref int ___m_totalRecv, ref bool ___m_gotData) {
             if (packages.Count > 0) {
-                package = packages.Dequeue();
+                BN_Logger.LogInfo("Compressed Receive: Dequeueing previously received package");
+                ZPackage package = packages.Dequeue();
                 ___m_totalRecv += package.Size();
                 ___m_gotData = true;
 
@@ -115,6 +115,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             
             if (!__instance.IsConnected()) {
+                BN_Logger.LogWarning("Compressed Receive: Not connected");
                 __result = null;
                 return false;
             }
@@ -136,7 +137,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 byte[] uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
 
-                BN_Logger.LogMessage($"Compressed data received: {steamNetworkingMessage_t.m_cbSize} decompressed into {uncompressedPackages.Length}");
+                BN_Logger.LogInfo($"Compressed Receive: {steamNetworkingMessage_t.m_cbSize} B -> {uncompressedPackages.Length} B");
 
                 steamNetworkingMessage_t.m_pfnRelease = array[0];
                 steamNetworkingMessage_t.Release();
@@ -152,7 +153,7 @@ namespace CW_Jesse.BetterNetworking {
                     }
                 }
 
-                package = packages.Dequeue();
+                ZPackage package = packages.Dequeue();
                 ___m_totalRecv += package.Size();
                 ___m_gotData = true;
 

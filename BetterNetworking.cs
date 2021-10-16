@@ -6,6 +6,7 @@ namespace CW_Jesse.BetterNetworking {
 
     [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "0.7.0")]
     [BepInProcess("valheim.exe")]
+    [BepInProcess("valheim_server.exe")]
     public class BetterNetworking : BaseUnityPlugin {
 
         private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
