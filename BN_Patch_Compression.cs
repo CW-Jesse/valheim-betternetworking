@@ -43,48 +43,56 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
         private static bool SendCompressedPackages(ZSteamSocket __instance, Queue<Byte[]> ___m_sendQueue, int ___m_totalSent, HSteamNetConnection ___m_con) {
+            
             if (!__instance.IsConnected()) {
                 return false;
             }
+
             while (___m_sendQueue.Count > 0) {
 
-                MemoryStream compressedPackagesStream = new MemoryStream();
-                BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream);
+                byte[][] packageArray = ___m_sendQueue.ToArray();
+                int uncompressedPackagesLength = 0;
+                byte[] compressedPackages;
 
-                int packageCount = ___m_sendQueue.Count;
+                using (MemoryStream compressedPackagesStream = new MemoryStream()) {
+                    using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
 
-                compressedPackagesWriter.Write(___m_sendQueue.Count); // number of packages
+                        compressedPackagesWriter.Write(___m_sendQueue.Count); // number of packages
 
-                int uncompressedDataLength = 0;
+                        for (int i = 0; i < packageArray.Length; i++) {
+                            compressedPackagesWriter.Write(packageArray[i].Length); // length of package
+                            compressedPackagesWriter.Write(packageArray[i]); // package
+                            uncompressedPackagesLength += packageArray[i].Length + 1; // +1 for the package length byte
+                        }
 
-                foreach (byte[] packageByteArray in ___m_sendQueue) {
-                    compressedPackagesWriter.Write(packageByteArray.Length); // length of package
-                    uncompressedDataLength += packageByteArray.Length;
-                    compressedPackagesWriter.Write(packageByteArray); // package
+                        compressedPackagesWriter.Flush();
+                        compressedPackages = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
+                    }
                 }
-
-                byte[] compressedPackages = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
 
                 IntPtr intPtr = Marshal.AllocHGlobal(compressedPackages.Length);
                 Marshal.Copy(compressedPackages, 0, intPtr, compressedPackages.Length);
-                long messagesSent;
+
                 EResult eresult;
+                long messagesSentCount;
                 if (BN_Utils.IsDedicated()) {
-                    eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSent);
+                    eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSentCount);
                 } else {
-                    eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSent);
+                    eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedPackages.Length, 8, out messagesSentCount);
                 }
+
                 Marshal.FreeHGlobal(intPtr);
+
                 if (eresult != EResult.k_EResultOK) {
-                    BN_Logger.LogError("Failed to send data: " + eresult);
+                    BN_Logger.LogError($"Failed to send data: {eresult}; please notify the mod author");
                     return false;
                 }
                 ___m_totalSent += compressedPackages.Length;
-                for (int i = 0; i < packageCount; i++) {
+                for (int i = 0; i < packageArray.Length; i++) {
                     ___m_sendQueue.Dequeue(); // TODO: inefficient
                 }
 
-                BN_Logger.LogMessage($"Compressed data sent: {uncompressedDataLength} bytes compressed into {compressedPackages.Length} bytes");
+                BN_Logger.LogMessage($"Compressed data sent: {uncompressedPackagesLength} bytes compressed into {compressedPackages.Length} bytes");
             }
 
             return false;
@@ -133,14 +141,15 @@ namespace CW_Jesse.BetterNetworking {
                 steamNetworkingMessage_t.m_pfnRelease = array[0];
                 steamNetworkingMessage_t.Release();
 
-                MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages);
-                BinaryReader uncompressedPackagesReader = new BinaryReader(uncompressedPackagesStream);
-
-                int packageCount = uncompressedPackagesReader.ReadInt32();
-                for (int i = 0; i < packageCount; i++){
-                    int packageLength = uncompressedPackagesReader.ReadInt32();
-                    byte[] packageByteArray = uncompressedPackagesReader.ReadBytes(packageLength);
-                    packages.Enqueue(new ZPackage(packageByteArray));
+                using (MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages)) {
+                    using (BinaryReader uncompressedPackagesReader = new BinaryReader(uncompressedPackagesStream)) {
+                        int packageCount = uncompressedPackagesReader.ReadInt32();
+                        for (int i = 0; i < packageCount; i++) {
+                            int packageLength = uncompressedPackagesReader.ReadInt32();
+                            byte[] packageByteArray = uncompressedPackagesReader.ReadBytes(packageLength);
+                            packages.Enqueue(new ZPackage(packageByteArray));
+                        }
+                    }
                 }
 
                 package = packages.Dequeue();
