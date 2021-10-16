@@ -1,10 +1,11 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
+﻿using BepInEx.Configuration;
 using HarmonyLib;
 
 using System.ComponentModel;
 
 namespace CW_Jesse.BetterNetworking {
+
+    [HarmonyPatch]
     public class BN_Patch_QueueSize {
         public enum Options_NetworkQueueSize {
             [Description("300% (30 KB)")]
@@ -32,37 +33,33 @@ namespace CW_Jesse.BetterNetworking {
                 ));
         }
 
-        [HarmonyPatch(typeof(ZSteamSocket))]
-        class NetworkQueueSize_Patch {
-
-            [HarmonyPatch(nameof(ZSteamSocket.GetSendQueueSize))]
-            static void Postfix(ref int __result) {
-#if DEBUG
-                int originalQueueSize = __result;
-#endif
-
-                switch (BetterNetworking.configNetworkQueueSize.Value) {
-                    case Options_NetworkQueueSize._300:
-                        __result /= 3;
-                        break;
-                    case Options_NetworkQueueSize._200:
-                        __result /= 2;
-                        break;
-                    case Options_NetworkQueueSize._150:
-                        __result = (int)(__result / 1.5);
-                        break;
-                    case Options_NetworkQueueSize._80:
-                        __result = (int)(__result / 0.8);
-                        break;
-                    case Options_NetworkQueueSize._60:
-                        __result = (int)(__result / 0.6);
-                        break;
-                }
+        [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.GetSendQueueSize))]
+        static void Postfix(ref int __result) {
 
 #if DEBUG
-                BN_Logger.LogInfo($"Queue size reported as {__result} instead of {originalQueueSize}");
+            int originalQueueSize = __result;
 #endif
+            switch (BetterNetworking.configNetworkQueueSize.Value) {
+                case Options_NetworkQueueSize._300:
+                    __result /= 3;
+                    break;
+                case Options_NetworkQueueSize._200:
+                    __result /= 2;
+                    break;
+                case Options_NetworkQueueSize._150:
+                    __result = (int)(__result / 1.5);
+                    break;
+                case Options_NetworkQueueSize._80:
+                    __result = (int)(__result / 0.8);
+                    break;
+                case Options_NetworkQueueSize._60:
+                    __result = (int)(__result / 0.6);
+                    break;
             }
+
+#if DEBUG
+            BN_Logger.LogInfo($"Queue size reported as {__result} instead of {originalQueueSize}");
+#endif
         }
     }
 }

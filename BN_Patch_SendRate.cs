@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace CW_Jesse.BetterNetworking {
+
+    [HarmonyPatch]
     public class BN_Patch_SendRate {
         public enum Options_NetworkSendRate {
             [Description("400% (600 KB/s | 4.8 Mbit/s)")]
@@ -122,7 +124,7 @@ namespace CW_Jesse.BetterNetworking {
                 GCHandle pinned_SendRate = GCHandle.Alloc(value, GCHandleType.Pinned);
 
                 try {
-                    if (ZNet.instance.IsDedicated()) {
+                    if (BN_Utils.IsDedicated()) {
                         BN_Logger.LogInfo("(dedicated server)");
 
                         SteamGameServerNetworkingUtils.SetConfigValue(

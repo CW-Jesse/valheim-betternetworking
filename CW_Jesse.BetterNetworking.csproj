@@ -40,6 +40,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs-Valheim\client\assembly_steamworks.dll</HintPath>
     </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>libs-Valheim\assembly_utils.dll</HintPath>
+    </Reference>
     <Reference Include="assembly_valheim, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs-Valheim\client\assembly_valheim.dll</HintPath>
@@ -84,6 +87,8 @@
     <Compile Include="BN_Patch_UpdateRate.cs" />
     <Compile Include="BN_Patch_SendRate.cs" />
     <Compile Include="BN_Patch_QueueSize.cs" />
+    <Compile Include="BN_Patch_Compression.cs" />
+    <Compile Include="BN_Utils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
