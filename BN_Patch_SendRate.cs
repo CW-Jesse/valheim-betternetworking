@@ -9,6 +9,9 @@ namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public class BN_Patch_SendRate {
+        private const int DEFAULT_SEND_BUFFER_SIZE = 524288; // 524288 is the Steam default and Valheim does not currently change it
+        private const int SEND_BUFFER_SIZE = DEFAULT_SEND_BUFFER_SIZE * 10;
+
         public enum Options_NetworkSendRate {
             [Description("No limit")]
             _INF,
@@ -75,6 +78,7 @@ namespace CW_Jesse.BetterNetworking {
             static private bool originalNetworkSendRateMin_set = false;
             static private int originalNetworkSendRateMax = 0;
             static private bool originalNetworkSendRateMax_set = false;
+            static private bool networkSendBufferSize_set = false;
 
 
             public static int sendRateMin {
@@ -133,6 +137,11 @@ namespace CW_Jesse.BetterNetworking {
 
                 BN_Logger.LogMessage($"Setting NetworkSendRateMax to {sendRateMax}");
                 SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMax, sendRateMax);
+            }
+            public static void SetSendBufferSize() {
+                networkSendBufferSize_set = true; // if the buffer sized is changed outside of this method, Valheim set it
+                BN_Logger.LogMessage($"Setting SendBufferSize to {SEND_BUFFER_SIZE}");
+                SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendBufferSize, SEND_BUFFER_SIZE);
             }
 
             private static void SetSteamNetworkConfig(ESteamNetworkingConfigValue valueType, int value) {
@@ -202,6 +211,11 @@ namespace CW_Jesse.BetterNetworking {
                                 BN_Logger.LogMessage($"Valheim's default NetworkSendRateMax is {originalNetworkSendRateMin}");
                             }
                             break;
+                        case ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendBufferSize:
+                            if (!networkSendBufferSize_set) {
+                                BN_Logger.LogWarning("Valheim set the SendBufferSize unexpectedly");
+                            }
+                            break;
                     }
                 }
             }
@@ -215,6 +229,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 NetworkSendRate_Patch.SetSendRateMinFromConfig();
                 NetworkSendRate_Patch.SetSendRateMaxFromConfig();
+                NetworkSendRate_Patch.SetSendBufferSize();
             }
         }
     }
