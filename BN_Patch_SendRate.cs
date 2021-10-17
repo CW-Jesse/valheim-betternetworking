@@ -10,7 +10,7 @@ namespace CW_Jesse.BetterNetworking {
     [HarmonyPatch]
     public class BN_Patch_SendRate {
         public enum Options_NetworkSendRate {
-            [Description("No limit (untested; don't mistake this for a good idea)")]
+            [Description("No limit")]
             _INF,
             [Description("400% (600 KB/s | 4.8 Mbit/s)")]
             _400,
@@ -31,17 +31,17 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkSendRateMin = config.Bind(
                 "Networking",
                 "Minimum Send Rate",
-                Options_NetworkSendRate._300,
+                Options_NetworkSendRate._100,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 150 KB/s as of patch 0.203.11."
+                    "Steam attempts to estimate your bandwidth.\nValheim sets the MINIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
 
             BetterNetworking.configNetworkSendRateMax = config.Bind(
                 "Networking",
                 "Maximum Send Rate",
-                Options_NetworkSendRate._300,
+                Options_NetworkSendRate._INF,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 150 KB/s as of patch 0.203.11."
+                    "Steam attempts to estimate your bandwidth.\nValheim sets the MAXIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
 
             configNetworkSendRateSettings_Listen();

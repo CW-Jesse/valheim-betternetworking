@@ -21,7 +21,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "You can reduce network strain by reducing how frequently your computer sends out updates.\n Listed values are correct as of patch 0.203.11."
+                    "You can reduce CPU/network strain by reducing how frequently your computer sends out updates.\nListed values are correct as of patch 0.203.11."
                 ));
         }
 

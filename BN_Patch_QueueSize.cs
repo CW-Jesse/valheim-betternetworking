@@ -8,6 +8,10 @@ namespace CW_Jesse.BetterNetworking {
     [HarmonyPatch]
     public class BN_Patch_QueueSize {
         public enum Options_NetworkQueueSize {
+            [Description("1200% (120 KB)")]
+            _1200,
+            [Description("900% (90 KB)")]
+            _900,
             [Description("600% (60 KB)")]
             _600,
             [Description("450% (45 KB)")]
@@ -31,7 +35,7 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkQueueSize = config.Bind(
                 "Networking",
                 "Queue Size",
-                Options_NetworkQueueSize._300,
+                Options_NetworkQueueSize._600,
                 new ConfigDescription(
                     "With low upload speeds, lowering your queue size allows Valheim to better prioritize outgoing data.\nListed values are correct as of patch 0.203.11."
                 ));
@@ -44,6 +48,12 @@ namespace CW_Jesse.BetterNetworking {
             int originalQueueSize = __result;
 #endif
             switch (BetterNetworking.configNetworkQueueSize.Value) {
+                case Options_NetworkQueueSize._1200:
+                    __result /= 12;
+                    break;
+                case Options_NetworkQueueSize._900:
+                    __result /= 9;
+                    break;
                 case Options_NetworkQueueSize._600:
                     __result /= 6;
                     break;
