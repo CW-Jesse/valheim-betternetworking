@@ -10,10 +10,16 @@ namespace CW_Jesse.BetterNetworking {
     [HarmonyPatch]
     public class BN_Patch_SendRate {
         public enum Options_NetworkSendRate {
+            [Description("No limit (untested; don't mistake this for a good idea)")]
+            _INF,
             [Description("400% (600 KB/s | 4.8 Mbit/s)")]
             _400,
+            [Description("300% (450 KB/s | 3.6 Mbit/s)")]
+            _300,
             [Description("200% (300 KB/s | 2.4 Mbit/s)")]
             _200,
+            [Description("150% (225 KB/s | 1.8 Mbit/s)")]
+            _150,
             [Description("100% (150 KB/s | 1.2 Mbit/s)")]
             _100,
             [Description("50% (75 KB/s | 0.6 Mbit/s)")]
@@ -25,7 +31,7 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkSendRateMin = config.Bind(
                 "Networking",
                 "Minimum Send Rate",
-                Options_NetworkSendRate._100,
+                Options_NetworkSendRate._300,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MINIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
@@ -33,7 +39,7 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkSendRateMax = config.Bind(
                 "Networking",
                 "Maximum Send Rate",
-                Options_NetworkSendRate._100,
+                Options_NetworkSendRate._300,
                 new ConfigDescription(
                     "Steam attempts to estimate your bandwidth. Valheim sets the MAXIMUM estimation at 150 KB/s as of patch 0.203.11."
                 ));
@@ -61,7 +67,9 @@ namespace CW_Jesse.BetterNetworking {
             }
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
         }
+
         [HarmonyPatch(typeof(SteamNetworkingUtils))]
+        [HarmonyPatch(typeof(SteamGameServerNetworkingUtils))]
         class NetworkSendRate_Patch {
             static private int originalNetworkSendRateMin = 0;
             static private bool originalNetworkSendRateMin_set = false;
@@ -72,10 +80,16 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMin {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMin.Value) {
+                        case Options_NetworkSendRate._INF:
+                            return 0;
                         case Options_NetworkSendRate._400:
                             return originalNetworkSendRateMin * 4;
+                        case Options_NetworkSendRate._300:
+                            return originalNetworkSendRateMin * 3;
                         case Options_NetworkSendRate._200:
                             return originalNetworkSendRateMin * 2;
+                        case Options_NetworkSendRate._150:
+                            return originalNetworkSendRateMin * 3/2;
                         case Options_NetworkSendRate._50:
                             return originalNetworkSendRateMin / 2;
                     }
@@ -85,10 +99,16 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMax {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMax.Value) {
+                        case Options_NetworkSendRate._INF:
+                            return 0;
                         case Options_NetworkSendRate._400:
                             return originalNetworkSendRateMax * 4;
+                        case Options_NetworkSendRate._300:
+                            return originalNetworkSendRateMax * 3;
                         case Options_NetworkSendRate._200:
                             return originalNetworkSendRateMax * 2;
+                        case Options_NetworkSendRate._150:
+                            return originalNetworkSendRateMax * 3 / 2;
                         case Options_NetworkSendRate._50:
                             return originalNetworkSendRateMax / 2;
                     }
@@ -153,6 +173,7 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             [HarmonyPatch(nameof(SteamNetworkingUtils.SetConfigValue))]
+            [HarmonyPatch(nameof(SteamGameServerNetworkingUtils.SetConfigValue))]
             static void Prefix(
                 ESteamNetworkingConfigValue eValue,
                 ESteamNetworkingConfigScope eScopeType,
