@@ -4,9 +4,7 @@ using HarmonyLib;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.1.2")]
-    [BepInProcess("valheim.exe")]
-    [BepInProcess("valheim_server.exe")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.1.3")]
     public class BetterNetworking : BaseUnityPlugin {
 
         private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");

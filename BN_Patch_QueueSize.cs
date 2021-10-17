@@ -37,7 +37,9 @@ namespace CW_Jesse.BetterNetworking {
                 "Queue Size",
                 Options_NetworkQueueSize._600,
                 new ConfigDescription(
-                    "With low upload speeds, lowering your queue size allows Valheim to better prioritize outgoing data.\nListed values are correct as of patch 0.203.11."
+                    "If SOME things are desyncing/lagging, increase this value.\n" +
+                    "If EVERYTHING is desyncing/lagging (including players' characters), decrease this and/or the update rate.\n" +
+                    "Listed values are correct as of patch 0.203.11."
                 ));
         }
 
