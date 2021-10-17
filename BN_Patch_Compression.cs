@@ -10,35 +10,34 @@ namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public class BN_Patch_Compression {
-        public const int VERSION = 0;
+        public const int COMPRESSION_VERSION = 1;
         private const string RPC_GET_COMPRESSION_VERSION = "CW_Jesse.BetterNetworking.GetCompressionVersion";
-        public static Dictionary<ZNetPeer, bool> peers = new Dictionary<ZNetPeer, bool>();
-
 
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
         [HarmonyPostfix]
         private static void OnConnect(ZNetPeer peer) {
-            BN_Logger.LogMessage($"Attempting to notify {peer.m_playerName} of our compression version");
-
             peer.m_rpc.Register<int>(RPC_GET_COMPRESSION_VERSION, new Action<ZRpc, int>(RPC_GetCompressionVersion));
+
+            BN_Logger.LogMessage($"Sending {peer.m_socket.GetHostName()} our compression version ({COMPRESSION_VERSION})");
+
             peer.m_rpc.Invoke(RPC_GET_COMPRESSION_VERSION, new object[] {
-                BN_Patch_Compression.VERSION
-            });
-            BN_Logger.LogMessage($"Compression version sent to {peer.m_playerName}: {BN_Patch_Compression.VERSION}");
+                    COMPRESSION_VERSION
+                });
+            BN_Logger.LogMessage($"Compression version sent to {peer}: {COMPRESSION_VERSION}");
+
+            PeerCompressionVersionSent(peer.m_socket);
         }
+
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPrefix]
         private static void OnDisconnect(ref ZNetPeer peer) {
-            BN_Patch_Compression.RemovePeer(peer);
+            RemovePeer(peer.m_socket);
         }
         private static void RPC_GetCompressionVersion(ZRpc rpc, int compressionVersion) {
-            ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            if (peer == null) { return; }
+            BN_Logger.LogMessage($"Compression version received from {rpc.GetSocket().GetHostName()}: {compressionVersion}");
 
-            BN_Logger.LogMessage($"Compression version received from {peer.m_playerName}: {compressionVersion}");
-
-            BN_Patch_Compression.AddPeer(peer, compressionVersion);
+            PeerCompressionVersionReceived(rpc.GetSocket(), compressionVersion);
         }
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
@@ -46,6 +45,11 @@ namespace CW_Jesse.BetterNetworking {
         private static bool SendCompressedPackages(ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
             if (!__instance.IsConnected()) {
                 return false;
+            }
+
+            if (!PeerHasCompression(__instance)) {
+                BN_Logger.LogInfo($"Compressed Send: Sending uncompressed data to {__instance.GetHostName()}");
+                return true;
             }
 
             while (___m_sendQueue.Count > 0) {
@@ -94,7 +98,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 if (uncompressedPackagesLength > 256) { // small messages don't compress well but they also don't matter
                     float compressedSizePercentage = ((float)compressedPackages.Length / (float)uncompressedPackagesLength) * 100;
-                    BN_Logger.LogInfo($"Compressed Send: {uncompressedPackagesLength} B was compressed to {compressedSizePercentage.ToString("0")}%");
+                    BN_Logger.LogInfo($"Compressed Send: {uncompressedPackagesLength} B compressed to {compressedSizePercentage.ToString("0")}%");
                 }
             }
 
@@ -120,6 +124,12 @@ namespace CW_Jesse.BetterNetworking {
                 __result = null;
                 return false;
             }
+
+            if (!PeerHasCompression(__instance)) {
+                BN_Logger.LogInfo($"Compressed Receive: Receiving uncompressed data from {__instance.GetHostName()}");
+                return true;
+            }
+
             IntPtr[] array = new IntPtr[1];
 
             bool receivedMessages = false;
@@ -136,7 +146,20 @@ namespace CW_Jesse.BetterNetworking {
                 byte[] compressedPackages = new byte[steamNetworkingMessage_t.m_cbSize];
                 Marshal.Copy(steamNetworkingMessage_t.m_pData, compressedPackages, 0, steamNetworkingMessage_t.m_cbSize);
 
-                byte[] uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
+                byte[] uncompressedPackages;
+                try {
+                    uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
+                } catch {
+                    BN_Logger.LogWarning("Compressed Receive: Couldn't decompress message; assuming uncompressed");
+
+                    ZPackage zpackage = new ZPackage(compressedPackages);
+                    steamNetworkingMessage_t.m_pfnRelease = array[0];
+                    steamNetworkingMessage_t.Release();
+                    ___m_totalRecv += zpackage.Size();
+                    ___m_gotData = true;
+                    __result = zpackage;
+                    return false;
+                }
 
                 if (uncompressedPackages.Length > 256) { // small messages don't compress well but they also don't matter
                     float compressedSizePercentage = ((float)steamNetworkingMessage_t.m_cbSize / (float)uncompressedPackages.Length) * 100;
@@ -168,29 +191,78 @@ namespace CW_Jesse.BetterNetworking {
             return false;
         }
 
-        public static void AddPeer(ZNetPeer peer, int compressionVersion) {
-            bool peerHasCompression = compressionVersion == VERSION;
 
-            peers.Add(peer, peerHasCompression);
+        private class PeerCompression {
+            public int compressionVersionSent = 0;
+            public int compressionVersionReceived = 0;
 
-            if (peerHasCompression) {
-                BN_Logger.LogMessage($"Compression enabled for {peer.m_playerName}");
-            } else {
-                if (compressionVersion > VERSION) {
-                    BN_Logger.LogError($"Can't use network compression for {peer.m_playerName}: you need to download the latest version of Better Networking");
-                } else {
-                    BN_Logger.LogWarning($"Can't use network compression for {peer.m_playerName}: they are using an older version of Better Networking");
+            public bool hasCompression {
+                get {
+                    if (compressionVersionReceived == 0 || compressionVersionSent == 0) { return false; }
+                    return compressionVersionReceived == compressionVersionSent;
+                }
+            }
+
+            public bool handshakeComplete {
+                get {
+                    return (compressionVersionReceived > 0 && compressionVersionSent > 0);
                 }
             }
         }
-        public static void RemovePeer(ZNetPeer peer) {
-            peers.Remove(peer);
+
+        private static Dictionary<ISocket, PeerCompression> peers = new Dictionary<ISocket, PeerCompression>();
+
+
+        public static void PeerCompressionVersionReceived(ISocket socket, int compressionVersion) {
+            if (!peers.ContainsKey(socket)) {
+                peers.Add(socket, new PeerCompression());
+            }
+
+            peers[socket].compressionVersionReceived = compressionVersion;
+
+            LogPeerCompressionInfo(socket);
         }
 
-        public static bool PeerHasCompression(ZNetPeer peer) {
-            if (peers.ContainsKey(peer)) {
-                return peers[peer];
+        public static void PeerCompressionVersionSent(ISocket socket) {
+            if (!peers.ContainsKey(socket)) {
+                peers.Add(socket, new PeerCompression());
             }
+
+            peers[socket].compressionVersionSent = COMPRESSION_VERSION;
+
+            LogPeerCompressionInfo(socket);
+        }
+        public static void RemovePeer(ISocket socket) {
+            peers.Remove(socket);
+        }
+
+        public static void LogPeerCompressionInfo(ISocket socket) {
+            if (!peers.ContainsKey(socket)) {
+                BN_Logger.LogError($"Compression: Unknown peer: {socket.GetHostName()}");
+                return;
+            }
+
+            if (!peers[socket].handshakeComplete) {
+                BN_Logger.LogInfo($"Compression: Handshake incomplete with {socket.GetHostName()}");
+                return;
+            }
+
+            if (peers[socket].hasCompression) {
+                BN_Logger.LogMessage($"Compression enabled for {socket.GetHostName()}");
+            } else {
+                if (peers[socket].compressionVersionReceived > COMPRESSION_VERSION) {
+                    BN_Logger.LogError($"Can't use network compression for {socket.GetHostName()}: you need to download the latest version of Better Networking");
+                } else {
+                    BN_Logger.LogWarning($"Can't use network compression for {socket.GetHostName()}: they are using an older version of Better Networking");
+                }
+            }
+        }
+
+        public static bool PeerHasCompression(ISocket socket) {
+            if (socket != null && peers.ContainsKey(socket)) {
+                return peers[socket].hasCompression;
+            }
+
             return false;
         }
     }
