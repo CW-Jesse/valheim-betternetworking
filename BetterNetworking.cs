@@ -1,10 +1,11 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.1.4")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.1.5")]
     [BepInIncompatibility("Steel.ValheimMod")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]
     public class BetterNetworking : BaseUnityPlugin {
@@ -27,8 +28,18 @@ namespace CW_Jesse.BetterNetworking {
             harmony.PatchAll();
         }
 
-        
+#if DEBUG
+        void Start() {
+            foreach (string pluginGuid in Chainloader.PluginInfos.Keys) {
+                string pluginName = Chainloader.PluginInfos[pluginGuid].Metadata.Name;
+                System.Version pluginVersion = Chainloader.PluginInfos[pluginGuid].Metadata.Version;
+                BN_Logger.LogMessage($"Detected plugin: {pluginName} ({pluginVersion})");
+            }
+        }
+#endif
 
-        
+        void OnDestroy() {
+            harmony.UnpatchAll();
+        }
     }
 }

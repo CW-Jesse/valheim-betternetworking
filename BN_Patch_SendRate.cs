@@ -36,15 +36,18 @@ namespace CW_Jesse.BetterNetworking {
                 "Minimum Send Rate",
                 Options_NetworkSendRate._100,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth.\nValheim sets the MINIMUM estimation at 150 KB/s as of patch 0.203.11."
+                    "The minimum speed Steam can <i>attempt</i> to send data.\n" +
+                    "Forcing it higher than the connection allows might decrease your performance.\n" +
+                    "(More testing is needed.)"
                 ));
-
             BetterNetworking.configNetworkSendRateMax = config.Bind(
                 "Networking",
                 "Maximum Send Rate",
                 Options_NetworkSendRate._INF,
                 new ConfigDescription(
-                    "Steam attempts to estimate your bandwidth.\nValheim sets the MAXIMUM estimation at 150 KB/s as of patch 0.203.11."
+                    "The maximum speed Steam can attempt to send data.\n" +
+                    "If Valheim is maxing out your internet upload bandwidth, decrease this value.\n" +
+                    "(More testing is needed.)"
                 ));
 
             configNetworkSendRateSettings_Listen();
@@ -122,7 +125,7 @@ namespace CW_Jesse.BetterNetworking {
 
             public static void SetSendRateMinFromConfig() {
                 if (!originalNetworkSendRateMin_set) {
-                    BN_Logger.LogWarning("Attempted to set NetworkSendRateMin before Valheim did");
+                    BN_Logger.LogInfo("Attempted to set NetworkSendRateMin before Valheim did");
                     return;
                 }
 
@@ -131,7 +134,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static void SetSendRateMaxFromConfig() {
                 if (!originalNetworkSendRateMax_set) {
-                    BN_Logger.LogWarning("Attempted to set NetworkSendRateMax before Valheim did");
+                    BN_Logger.LogInfo("Attempted to set NetworkSendRateMax before Valheim did");
                     return;
                 }
 
@@ -146,7 +149,7 @@ namespace CW_Jesse.BetterNetworking {
 
             private static void SetSteamNetworkConfig(ESteamNetworkingConfigValue valueType, int value) {
                 if (ZNet.instance == null) {
-                    BN_Logger.LogWarning("Attempted to set Steam networking config value while disconnected");
+                    BN_Logger.LogInfo("Attempted to set Steam networking config value while disconnected");
                     return;
                 }
 

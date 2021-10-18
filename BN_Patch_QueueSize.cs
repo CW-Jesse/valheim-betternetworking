@@ -37,9 +37,9 @@ namespace CW_Jesse.BetterNetworking {
                 "Queue Size",
                 Options_NetworkQueueSize._600,
                 new ConfigDescription(
-                    "If SOME things are desyncing/lagging, increase this value.\n" +
-                    "If EVERYTHING is desyncing/lagging (including players' characters), decrease this and/or the update rate.\n" +
-                    "Listed values are correct as of patch 0.203.11."
+                    "If Person A is experiencing desync/lag while Person B is around, but their character seems fine, <b>Person B</b> needs to <b>increase</b> their queue size.\n" +
+                    "---\n" +
+                    "If Person A is experiencing desync/lag while Person B is around, <i>including their character</i>, <b>Person B</b> needs to <b>decrease</b> their update rate and/or queue size."
                 ));
         }
 

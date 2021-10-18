@@ -21,8 +21,9 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "If you're experiencing lag, low FPS, or desyncs of other players' characters, reducing this might help.\n" +
-                    "Listed values are correct as of patch 0.203.11."
+                    "If Person A is experiencing desync/lag while Person B is around, <i>including their character</i>, <b>Person B</b> needs to <b>decrease</b> their update rate and/or queue size.\n" +
+                    "---\n" +
+                    "This mod is CPU-heavy. If you experience performance issues not related to networking, decrease the update rate."
                 ));
         }
 

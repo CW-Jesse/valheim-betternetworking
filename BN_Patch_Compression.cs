@@ -152,7 +152,7 @@ namespace CW_Jesse.BetterNetworking {
                 try {
                     uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
                 } catch {
-                    BN_Logger.LogWarning("Compressed Receive: Couldn't decompress message; assuming uncompressed");
+                    BN_Logger.LogInfo("Compressed Receive: Couldn't decompress message; assuming uncompressed");
 
                     ZPackage zpackage = new ZPackage(compressedPackages);
                     steamNetworkingMessage_t.m_pfnRelease = array[0];
