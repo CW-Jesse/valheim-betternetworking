@@ -34,7 +34,7 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkSendRateMin = config.Bind(
                 "Networking",
                 "Minimum Send Rate",
-                Options_NetworkSendRate._100,
+                Options_NetworkSendRate._300,
                 new ConfigDescription(
                     "The minimum speed Steam can <i>attempt</i> to send data.\n" +
                     "Forcing it higher than the connection allows might decrease your performance.\n" +
@@ -63,6 +63,10 @@ namespace CW_Jesse.BetterNetworking {
             if (BetterNetworking.configNetworkSendRateMin.Value < BetterNetworking.configNetworkSendRateMax.Value) {
                 BetterNetworking.configNetworkSendRateMax.Value = BetterNetworking.configNetworkSendRateMin.Value;
                 BN_Logger.LogInfo("Maximum network send rate automatically increased");
+            }
+            if (BetterNetworking.configNetworkSendRateMin.Value == Options_NetworkSendRate._INF) {
+                BetterNetworking.configNetworkSendRateMin.Value += 1;
+                BN_Logger.LogInfo("Minimum network send rate automatically decreased (cannot have infinite minimum send rate)");
             }
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
         }
@@ -143,7 +147,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static void SetSendBufferSize() {
                 networkSendBufferSize_set = true; // if the buffer sized is changed outside of this method, Valheim set it
-                BN_Logger.LogMessage($"Setting SendBufferSize to {SEND_BUFFER_SIZE}");
+                BN_Logger.LogMessage($"Setting SendBufferSize to {SEND_BUFFER_SIZE} (dedicated:{BN_Utils.IsDedicated()})");
                 SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendBufferSize, SEND_BUFFER_SIZE);
             }
 
@@ -157,8 +161,6 @@ namespace CW_Jesse.BetterNetworking {
 
                 try {
                     if (BN_Utils.IsDedicated()) {
-                        BN_Logger.LogInfo("(dedicated server)");
-
                         SteamGameServerNetworkingUtils.SetConfigValue(
                             valueType,
                             ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
@@ -167,8 +169,6 @@ namespace CW_Jesse.BetterNetworking {
                             pinned_SendRate.AddrOfPinnedObject()
                             );
                     } else {
-                        BN_Logger.LogInfo("(non-dedicated server)");
-
                         SteamNetworkingUtils.SetConfigValue(
                             valueType,
                             ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
@@ -228,7 +228,7 @@ namespace CW_Jesse.BetterNetworking {
         class PreventValheimControlOfNetworkRate_Patch {
 
             static void Postfix() {
-                BN_Logger.LogInfo("Network settings overwritten by Valheim; setting them to Better Networking values");
+                BN_Logger.LogInfo("Network settings overwritten by Valheim");
 
                 NetworkSendRate_Patch.SetSendRateMinFromConfig();
                 NetworkSendRate_Patch.SetSendRateMaxFromConfig();

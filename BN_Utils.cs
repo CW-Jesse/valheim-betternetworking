@@ -8,20 +8,36 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
+            BN_Logger.LogError("Utils: Didn't find peer by RPC");
             return null;
         }
-        public static ZNetPeer GetPeer(ZSteamSocket steamSocket) {
-            return ZNet.instance.GetPeerByHostName(steamSocket.GetHostName());
+        public static ZNetPeer GetPeer(ZSteamSocket socket) {
+            foreach (ZNetPeer znetPeer in ZNet.instance.GetPeers()) {
+                if (znetPeer.m_socket.GetHostName() == socket.GetHostName()) {
+                    return znetPeer;
+                }
+            }
+            BN_Logger.LogMessage($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
+            return null;
+            //return ZNet.instance.GetPeerByHostName(socket.GetHostName());
         }
-
-        public static string GetPeerHostname(ZSteamSocket steamSocket) {
-            return steamSocket.GetHostName();
+        public static string GetPeerName(ZSteamSocket socket) {
+            return GetPeerName(GetPeer(socket));
         }
-        public static string GetPeerHostname(ZNetPeer peer) {
-            return peer.m_socket.GetHostName();
-        }
-        public static string GetPeerHostname(ZRpc rpc) {
-            return GetPeerHostname((ZSteamSocket)rpc.GetSocket());
+        public static string GetPeerName(ZNetPeer peer) {
+            if (peer == null) {
+                return "null peer";
+            }
+            if (peer.m_server) {
+                return "[server]";
+            }
+            if (!string.IsNullOrEmpty(peer.m_playerName)) {
+                return $"{peer.m_playerName}[{peer.m_socket.GetHostName()}]";
+            }
+            if (!string.IsNullOrEmpty(peer.m_socket.GetHostName())) {
+                return $"[{peer.m_socket.GetHostName()}]";
+            }
+            return "unknown peer";
         }
 
         public static bool IsDedicated() {
