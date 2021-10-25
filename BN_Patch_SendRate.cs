@@ -12,12 +12,26 @@ namespace CW_Jesse.BetterNetworking {
         private const int DEFAULT_SEND_BUFFER_SIZE = 524288; // 524288 is the Steam default and Valheim does not currently change it
         private const int SEND_BUFFER_SIZE = DEFAULT_SEND_BUFFER_SIZE * 10;
 
-        public enum Options_NetworkSendRate {
-            [Description("No limit")]
+        public enum Options_NetworkSendRateMax {
+            [Description("No limit <b>[default]</b>")]
             _INF,
             [Description("400% (600 KB/s | 4.8 Mbit/s)")]
             _400,
             [Description("300% (450 KB/s | 3.6 Mbit/s)")]
+            _300,
+            [Description("200% (300 KB/s | 2.4 Mbit/s)")]
+            _200,
+            [Description("150% (225 KB/s | 1.8 Mbit/s)")]
+            _150,
+            [Description("100% (150 KB/s | 1.2 Mbit/s)")]
+            _100,
+            [Description("50% (75 KB/s | 0.6 Mbit/s)")]
+            _50
+        }
+        public enum Options_NetworkSendRateMin {
+            [Description("400% (600 KB/s | 4.8 Mbit/s)")]
+            _400,
+            [Description("300% (450 KB/s | 3.6 Mbit/s) <b>[default]</b>")]
             _300,
             [Description("200% (300 KB/s | 2.4 Mbit/s)")]
             _200,
@@ -34,20 +48,18 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkSendRateMin = config.Bind(
                 "Networking",
                 "Minimum Send Rate",
-                Options_NetworkSendRate._300,
+                Options_NetworkSendRateMin._300,
                 new ConfigDescription(
                     "The minimum speed Steam can <i>attempt</i> to send data.\n" +
-                    "Forcing it higher than the connection allows might decrease your performance.\n" +
-                    "(More testing is needed.)"
+                    "<b>Lower this below your internet upload speed.</b>"
                 ));
             BetterNetworking.configNetworkSendRateMax = config.Bind(
                 "Networking",
                 "Maximum Send Rate",
-                Options_NetworkSendRate._INF,
+                Options_NetworkSendRateMax._INF,
                 new ConfigDescription(
-                    "The maximum speed Steam can attempt to send data.\n" +
-                    "If Valheim is maxing out your internet upload bandwidth, decrease this value.\n" +
-                    "(More testing is needed.)"
+                    "The maximum speed Steam can <i>attempt</i> to send data.\n" +
+                    "If you have a low upload speed, lower this <i>below</i> your internet upload speed."
                 ));
 
             configNetworkSendRateSettings_Listen();
@@ -60,19 +72,15 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         private static void ConfigNetworkSendRateMin_SettingChanged(object sender, EventArgs e) {
-            if (BetterNetworking.configNetworkSendRateMin.Value < BetterNetworking.configNetworkSendRateMax.Value) {
-                BetterNetworking.configNetworkSendRateMax.Value = BetterNetworking.configNetworkSendRateMin.Value;
+            if ((int)BetterNetworking.configNetworkSendRateMin.Value+1 < (int)BetterNetworking.configNetworkSendRateMax.Value) {
+                BetterNetworking.configNetworkSendRateMax.Value = (Options_NetworkSendRateMax)(BetterNetworking.configNetworkSendRateMin.Value+1);
                 BN_Logger.LogInfo("Maximum network send rate automatically increased");
-            }
-            if (BetterNetworking.configNetworkSendRateMin.Value == Options_NetworkSendRate._INF) {
-                BetterNetworking.configNetworkSendRateMin.Value += 1;
-                BN_Logger.LogInfo("Minimum network send rate automatically decreased (cannot have infinite minimum send rate)");
             }
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
         }
         private static void ConfigNetworkSendRateMax_SettingChanged(object sender, EventArgs e) {
-            if (BetterNetworking.configNetworkSendRateMax.Value > BetterNetworking.configNetworkSendRateMin.Value) {
-                BetterNetworking.configNetworkSendRateMin.Value = BetterNetworking.configNetworkSendRateMax.Value;
+            if ((int)BetterNetworking.configNetworkSendRateMax.Value > (int)BetterNetworking.configNetworkSendRateMin.Value+1) {
+                BetterNetworking.configNetworkSendRateMin.Value = (Options_NetworkSendRateMin)(BetterNetworking.configNetworkSendRateMax.Value-1);
                 BN_Logger.LogInfo("Minimum network send rate automatically decreased");
             }
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
@@ -91,17 +99,15 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMin {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMin.Value) {
-                        case Options_NetworkSendRate._INF:
-                            return 0;
-                        case Options_NetworkSendRate._400:
+                        case Options_NetworkSendRateMin._400:
                             return originalNetworkSendRateMin * 4;
-                        case Options_NetworkSendRate._300:
+                        case Options_NetworkSendRateMin._300:
                             return originalNetworkSendRateMin * 3;
-                        case Options_NetworkSendRate._200:
+                        case Options_NetworkSendRateMin._200:
                             return originalNetworkSendRateMin * 2;
-                        case Options_NetworkSendRate._150:
+                        case Options_NetworkSendRateMin._150:
                             return originalNetworkSendRateMin * 3/2;
-                        case Options_NetworkSendRate._50:
+                        case Options_NetworkSendRateMin._50:
                             return originalNetworkSendRateMin / 2;
                     }
                     return originalNetworkSendRateMin;
@@ -110,17 +116,17 @@ namespace CW_Jesse.BetterNetworking {
             public static int sendRateMax {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMax.Value) {
-                        case Options_NetworkSendRate._INF:
+                        case Options_NetworkSendRateMax._INF:
                             return 0;
-                        case Options_NetworkSendRate._400:
+                        case Options_NetworkSendRateMax._400:
                             return originalNetworkSendRateMax * 4;
-                        case Options_NetworkSendRate._300:
+                        case Options_NetworkSendRateMax._300:
                             return originalNetworkSendRateMax * 3;
-                        case Options_NetworkSendRate._200:
+                        case Options_NetworkSendRateMax._200:
                             return originalNetworkSendRateMax * 2;
-                        case Options_NetworkSendRate._150:
-                            return originalNetworkSendRateMax * 3 / 2;
-                        case Options_NetworkSendRate._50:
+                        case Options_NetworkSendRateMax._150:
+                            return originalNetworkSendRateMax * 3/2;
+                        case Options_NetworkSendRateMax._50:
                             return originalNetworkSendRateMax / 2;
                     }
                     return originalNetworkSendRateMax;

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.IO;
+
 using HarmonyLib;
 using Steamworks;
 using K4os.Compression.LZ4;
-using System.IO;
 using BepInEx.Configuration;
 
 namespace CW_Jesse.BetterNetworking {
@@ -17,12 +19,22 @@ namespace CW_Jesse.BetterNetworking {
         
         private const string RPC_COMPRESSION_VERSION_1 = "CW_Jesse.BetterNetworking.GetCompressionVersion"; // backwards compatibility
 
+
+        public enum Options_NetworkCompression {
+            [Description("Enabled <b>[default]</b>")]
+            @true,
+            [Description("Disabled")]
+            @false
+        }
+
         public static void InitConfig(ConfigFile config) {
             BetterNetworking.configCompressionEnabled = config.Bind(
                 "Networking",
                 "Compression Enabled",
-                true,
-                new ConfigDescription("Most people will want to keep this enabled."));
+                Options_NetworkCompression.@true,
+                new ConfigDescription("Most people will want to keep this enabled.\n" +
+                "---\n" +
+                "If your internet is great and your computer isn't, then try lowering your update rate, lowering your queue size, and/or disabling compression."));
 
             BetterNetworking.configCompressionEnabled.SettingChanged += ConfigCompressionEnabled_SettingChanged;
         }
@@ -33,7 +45,7 @@ namespace CW_Jesse.BetterNetworking {
         private static void SetCompressionEnabledFromConfig() {
             int newCompressionStatus  = 0;
 
-            if (BetterNetworking.configCompressionEnabled.Value) {
+            if (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true) {
                 newCompressionStatus = CompressionStatus.COMPRESSION_STATUS_ENABLED;
                 BN_Logger.LogMessage($"Compression: Enabling");
             } else {
@@ -157,7 +169,7 @@ namespace CW_Jesse.BetterNetworking {
                     ___m_sendQueue.Dequeue(); // TODO: inefficient
                 }
 
-                if (BetterNetworking.configLogMessages.Value) {
+                if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
                     if (uncompressedPackagesLength > 256) { // small messages don't compress well but they also don't matter
                         float compressedSizePercentage = ((float)compressedPackages.Length / (float)uncompressedPackagesLength) * 100;
                         BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {uncompressedPackagesLength} B compressed to {compressedSizePercentage.ToString("0")}%");
@@ -229,7 +241,7 @@ namespace CW_Jesse.BetterNetworking {
                     return false;
                 }
 
-                if (BetterNetworking.configLogMessages.Value) {
+                if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
                     if (uncompressedPackages.Length > 256) { // small messages don't compress well but they also don't matter
                         float compressedSizePercentage = ((float)steamNetworkingMessage_t.m_cbSize / (float)uncompressedPackages.Length) * 100;
                         BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): {uncompressedPackages.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
@@ -269,7 +281,7 @@ namespace CW_Jesse.BetterNetworking {
             public const int COMPRESSION_STATUS_ENABLED = 1;
             public const int COMPRESSION_STATUS_DISABLED = 0;
 
-            public static PeerCompressionStatus status = new PeerCompressionStatus() { version = COMPRESSION_VERSION, enabled = BetterNetworking.configCompressionEnabled.Value ? 1 : 0 };
+            public static PeerCompressionStatus status = new PeerCompressionStatus() { version = COMPRESSION_VERSION, enabled = (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true ? 1 : 0) };
             private static Dictionary<ZNetPeer, PeerCompressionStatus> peerStatuses = new Dictionary<ZNetPeer, PeerCompressionStatus>();
             public class PeerCompressionStatus {
                 public int version = COMPRESSION_VERSION_UNKNOWN;

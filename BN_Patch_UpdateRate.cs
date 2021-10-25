@@ -7,7 +7,7 @@ namespace CW_Jesse.BetterNetworking {
 
     public class BN_Patch_UpdateRate {
         public enum Options_NetworkUpdateRates {
-            [Description("100% (20 updates/second)")]
+            [Description("100% (20 updates/second) <b>[default]</b>")]
             _100,
             [Description("75% (15 updates/second)")]
             _75,
@@ -21,9 +21,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "If Person A is experiencing desync/lag while Person B is around, <i>including their character</i>, <b>Person B</b> needs to <b>decrease</b> their update rate and/or queue size.\n" +
-                    "---\n" +
-                    "This mod is CPU-heavy. If you experience performance issues not related to networking, decrease the update rate."
+                    "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
                 ));
         }
 

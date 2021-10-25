@@ -1,17 +1,27 @@
 ﻿using BepInEx.Configuration;
 using BepInEx.Logging;
+using System;
+using System.ComponentModel;
 
 namespace CW_Jesse.BetterNetworking {
-    class BN_Logger {
+    public class BN_Logger {
         private static ManualLogSource logger;
+        public enum Options_Logger_LogLevel {
+            [Description("Errors/Warnings <b>[default]</b>")]
+            warning,
+            [Description("Errors/Warnings/Messages")]
+            message,
+            [Description("Errors/Warnings/Messages/Info")]
+            info
+        }
 
         public static void Init(ManualLogSource logger, ConfigFile config) {
             BN_Logger.logger = logger;
             BetterNetworking.configLogMessages = config.Bind(
                 "Logging",
-                "Log Info Messages",
-                false,
-                "True: Verbose logs.\nFalse: Only log warnings and errors.");
+                "Log Level",
+                Options_Logger_LogLevel.warning,
+                "Better Network's verbosity in console/logs.");
         }
 
         public static void LogError(object data) {
@@ -21,10 +31,12 @@ namespace CW_Jesse.BetterNetworking {
             BN_Logger.logger.LogWarning(data);
         }
         public static void LogMessage(object data) {
-            BN_Logger.logger.LogMessage(data);
+            if (BetterNetworking.configLogMessages.Value >= Options_Logger_LogLevel.message) {
+                BN_Logger.logger.LogMessage(data);
+            }
         }
         public static void LogInfo(object data) {
-            if (BetterNetworking.configLogMessages.Value == true) {
+            if (BetterNetworking.configLogMessages.Value >= Options_Logger_LogLevel.info) {
                 BN_Logger.logger.LogInfo(data);
             }
         }
