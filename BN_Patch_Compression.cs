@@ -58,7 +58,7 @@ namespace CW_Jesse.BetterNetworking {
             if (ZNet.instance != null) {
                 foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
                     if (CompressionStatus.VersionCompatibleWith(peer)) {
-                        BN_Logger.LogMessage($"Compression: Sending {BN_Utils.GetPeerName(peer)} our compression status: ({newCompressionStatus})");
+                        BN_Logger.LogMessage($"Compression: Compression status sent to {BN_Utils.GetPeerName(peer)}: ({newCompressionStatus})");
                         peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { newCompressionStatus });
                     }
                 }
@@ -88,7 +88,7 @@ namespace CW_Jesse.BetterNetworking {
         }
         private static void RPC_CompressionVersion(ZRpc rpc, int version) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            BN_Logger.LogMessage($"Received: Received compression version from {BN_Utils.GetPeerName(peer)}: {version}");
+            BN_Logger.LogMessage($"Compression: Version received from {BN_Utils.GetPeerName(peer)}: {version}");
             if (CompressionStatus.SetVersion(peer, version)) {
                 if (CompressionStatus.VersionCompatibleWith(peer)) {
                     BN_Logger.LogMessage($"Compression: Sending {BN_Utils.GetPeerName(peer)} our compression status: ({CompressionStatus.status.enabled})");
@@ -359,31 +359,19 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static bool SetEnabled(ZNetPeer peer, int enabled) {
                 if (!PeerAdded(peer)) {
-                    BN_Logger.LogError($"Compression: Tried to set enabled status for unadded peer {BN_Utils.GetPeerName(peer)}: {enabled}");
+                    BN_Logger.LogError($"Compression: Could not set status for unadded peer {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
                     return false;
                 }
 
                 if (GetEnabled(peer) == enabled) {
-                    BN_Logger.LogError($"Compression: Didn't change enabled status for {BN_Utils.GetPeerName(peer)}: {enabled}");
+                    BN_Logger.LogError($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
                     return true;
                 }
 
                 peerStatuses[peer].enabled = enabled;
 
-                switch (enabled) {
-                    case COMPRESSION_STATUS_ENABLED:
-                        BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} has enabled compression");
-                        break;
-                    case COMPRESSION_STATUS_DISABLED:
-                        BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} has disabled compression");
-                        break;
-                }
-
-                if (EnabledWith(peer)) {
-                    BN_Logger.LogMessage($"Compression: Enabled with {BN_Utils.GetPeerName(peer)}");
-                } else {
-                    BN_Logger.LogMessage($"Compression: Disabled with {BN_Utils.GetPeerName(peer)}");
-                }
+                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+                BN_Logger.LogMessage($"Compression: Compression with {BN_Utils.GetPeerName(peer)}: {(EnabledWith(peer) ? "enabled" : "disabled")}");
 
                 return true;
             }
