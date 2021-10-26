@@ -7,9 +7,9 @@ namespace CW_Jesse.BetterNetworking {
     public class BN_Logger {
         private static ManualLogSource logger;
         public enum Options_Logger_LogLevel {
-            [Description("Errors/Warnings <b>[default]</b>")]
+            [Description("Errors/Warnings")]
             warning,
-            [Description("Errors/Warnings/Messages")]
+            [Description("Errors/Warnings/Messages <b>[default]</b>")]
             message,
             [Description("Errors/Warnings/Messages/Info")]
             info
@@ -20,7 +20,7 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configLogMessages = config.Bind(
                 "Logging",
                 "Log Level",
-                Options_Logger_LogLevel.warning,
+                Options_Logger_LogLevel.message,
                 "Better Network's verbosity in console/logs.");
         }
 
