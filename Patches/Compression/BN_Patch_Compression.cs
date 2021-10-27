@@ -12,12 +12,8 @@ using BepInEx.Configuration;
 namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
-    public class BN_Patch_Compression {
+    public partial class BN_Patch_Compression {
         private const int COMPRESSION_VERSION = 2;
-        private const string RPC_COMPRESSION_VERSION = "CW_Jesse.BetterNetworking.CompressionVersion";
-        private const string RPC_COMPRESSION_STATUS  = "CW_Jesse.BetterNetworking.CompressionStatus";
-        
-        private const string RPC_COMPRESSION_VERSION_1 = "CW_Jesse.BetterNetworking.GetCompressionVersion"; // backwards compatibility
 
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
@@ -45,7 +41,7 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         private static void SetCompressionEnabledFromConfig() {
-            int newCompressionStatus  = 0;
+            int newCompressionStatus;
 
             if (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true) {
                 newCompressionStatus = CompressionStatus.COMPRESSION_STATUS_ENABLED;
@@ -55,14 +51,7 @@ namespace CW_Jesse.BetterNetworking {
                 BN_Logger.LogMessage($"Compression: Disabling");
             }
 
-            if (ZNet.instance != null) {
-                foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
-                    if (CompressionStatus.VersionCompatibleWith(peer)) {
-                        BN_Logger.LogMessage($"Compression: Compression status sent to {BN_Utils.GetPeerName(peer)}: ({newCompressionStatus})");
-                        peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { newCompressionStatus });
-                    }
-                }
-            }
+            SendCompressionEnabledStatus(newCompressionStatus);
 
             CompressionStatus.status.enabled = newCompressionStatus;
         }
@@ -72,41 +61,14 @@ namespace CW_Jesse.BetterNetworking {
         private static void OnConnect(ref ZNetPeer peer) {
             CompressionStatus.Add(peer);
 
-            peer.m_rpc.Register<int>(RPC_COMPRESSION_VERSION, new Action<ZRpc, int>(RPC_CompressionVersion));
-            peer.m_rpc.Register<int>(RPC_COMPRESSION_VERSION_1, new Action<ZRpc, int>(RPC_CompressionVersion)); // backwards compatibility
-            peer.m_rpc.Register<int>(RPC_COMPRESSION_STATUS, new Action<ZRpc, int>(RPC_CompressionEnabled));
-
-            int compressionVersion = CompressionStatus.status.version;
-            peer.m_rpc.Invoke(RPC_COMPRESSION_VERSION, new object[] { compressionVersion });
-            BN_Logger.LogMessage($"Compression: Version sent to {BN_Utils.GetPeerName(peer)}: {compressionVersion}");
+            RegisterRPCs(peer);
+            SendCompressionVersion(peer, CompressionStatus.status.version);
         }
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPrefix]
         private static void OnDisconnect(ZNetPeer peer) {
             CompressionStatus.Remove(peer);
-        }
-        private static void RPC_CompressionVersion(ZRpc rpc, int version) {
-            ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            BN_Logger.LogMessage($"Compression: Version received from {BN_Utils.GetPeerName(peer)}: {version}");
-            if (CompressionStatus.SetVersion(peer, version)) {
-                if (CompressionStatus.VersionCompatibleWith(peer)) {
-                    BN_Logger.LogMessage($"Compression: Sending {BN_Utils.GetPeerName(peer)} our compression status: ({CompressionStatus.status.enabled})");
-                    peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { CompressionStatus.status.enabled });
-                }
-            }
-        }
-        private static void RPC_CompressionEnabled(ZRpc rpc, int enabled) {
-            ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            if (CompressionStatus.SetEnabled(peer, enabled)) {
-
-            }
-        }
-        private static void SendCompressionEnabledStatus(ZNetPeer peer, int enabled) {
-            if (ZNet.instance != null) {
-                BN_Logger.LogMessage($"Compression: Sending compression status to {BN_Utils.GetPeerName(peer)}: {enabled}");
-                peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { CompressionStatus.COMPRESSION_STATUS_DISABLED });
-            }
         }
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
@@ -212,7 +174,7 @@ namespace CW_Jesse.BetterNetworking {
             return false;
          }
 
-        private static Queue<ZPackage> packages = new Queue<ZPackage>();
+        private readonly static Queue<ZPackage> packages = new Queue<ZPackage>();
 
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
         [HarmonyPrefix]
@@ -314,7 +276,7 @@ namespace CW_Jesse.BetterNetworking {
             public const int COMPRESSION_STATUS_DISABLED = 0;
 
             public static PeerCompressionStatus status = new PeerCompressionStatus() { version = COMPRESSION_VERSION, enabled = (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true ? 1 : 0) };
-            private static Dictionary<ZNetPeer, PeerCompressionStatus> peerStatuses = new Dictionary<ZNetPeer, PeerCompressionStatus>();
+            private readonly static Dictionary<ZNetPeer, PeerCompressionStatus> peerStatuses = new Dictionary<ZNetPeer, PeerCompressionStatus>();
             public class PeerCompressionStatus {
                 public int version = COMPRESSION_VERSION_UNKNOWN;
                 public int enabled = 0;

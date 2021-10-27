@@ -234,10 +234,11 @@
   <ItemGroup>
     <Compile Include="BetterNetworking.cs" />
     <Compile Include="BN_Logger.cs" />
-    <Compile Include="BN_Patch_UpdateRate.cs" />
-    <Compile Include="BN_Patch_SendRate.cs" />
-    <Compile Include="BN_Patch_QueueSize.cs" />
-    <Compile Include="BN_Patch_Compression.cs" />
+    <Compile Include="Patches\Compression\BN_Patch_Compression_RPC.cs" />
+    <Compile Include="Patches\BN_Patch_UpdateRate.cs" />
+    <Compile Include="Patches\BN_Patch_SendRate.cs" />
+    <Compile Include="Patches\BN_Patch_QueueSize.cs" />
+    <Compile Include="Patches\Compression\BN_Patch_Compression.cs" />
     <Compile Include="BN_Utils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
