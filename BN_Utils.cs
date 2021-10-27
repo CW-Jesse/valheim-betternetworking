@@ -17,7 +17,7 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
-            BN_Logger.LogMessage($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
+            BN_Logger.LogInfo($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
             return null;
             //return ZNet.instance.GetPeerByHostName(socket.GetHostName());
         }
