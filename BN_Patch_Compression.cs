@@ -127,81 +127,84 @@ namespace CW_Jesse.BetterNetworking {
             BN_Logger.LogInfo($"Compressed Send: Sending compressed message to {BN_Utils.GetPeerName(peer)}");
 #endif
 
-            while (___m_sendQueue.Count > 0) {
+            lock (___m_sendQueue) {
 
-                int packagesToSendCount = 0;
-                int packagesToSendLength = 0;
+                while (___m_sendQueue.Count > 0) {
 
-                // determine how many packages to send in a single message
+                    int packagesToSendCount = 0;
+                    int packagesToSendLength = 0;
 
-                List<byte[]> packagesToSendList = new List<byte[]>();
-                foreach (byte[] package in ___m_sendQueue) {
-                    if (packagesToSendCount > 0 && // send at least one package
-                        packagesToSendLength + package.Length > k_cbMaxSteamNetworkingSocketsMessageSizeSend) { // packages must not exceed steam message send size limit uncompressed (assumes successful compression)
-                        BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached limit of {k_cbMaxSteamNetworkingSocketsMessageSizeSend}; sending queued packages in another message");
-                        break;
-                    }
+                    // determine how many packages to send in a single message
 
-                    packagesToSendLength += package.Length;
-                    packagesToSendCount += 1;
-                    packagesToSendList.Add(package);
-                }
-
-                // compress message
-
-                byte[][] packagesToSendArray = packagesToSendList.ToArray();
-                byte[] compressedMessage;
-
-                using (MemoryStream compressedPackagesStream = new MemoryStream()) {
-                    using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
-
-                        compressedPackagesWriter.Write(packagesToSendCount); // number of packages
-
-                        for (int i = 0; i < packagesToSendCount; i++) {
-                            compressedPackagesWriter.Write(packagesToSendArray[i].Length); // length of package
-                            compressedPackagesWriter.Write(packagesToSendArray[i]); // package
+                    List<byte[]> packagesToSendList = new List<byte[]>();
+                    foreach (byte[] package in ___m_sendQueue) {
+                        if (packagesToSendCount > 0 && // send at least one package
+                            packagesToSendLength + package.Length > k_cbMaxSteamNetworkingSocketsMessageSizeSend) { // packages must not exceed steam message send size limit uncompressed (assumes successful compression)
+                            BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached limit of {k_cbMaxSteamNetworkingSocketsMessageSizeSend}; sending queued packages in another message");
+                            break;
                         }
 
-                        compressedPackagesWriter.Flush();
-                        compressedMessage = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
+                        packagesToSendLength += package.Length;
+                        packagesToSendCount += 1;
+                        packagesToSendList.Add(package);
                     }
-                }
 
-                // send message
+                    // compress message
 
-                IntPtr intPtr = Marshal.AllocHGlobal(compressedMessage.Length);
-                Marshal.Copy(compressedMessage, 0, intPtr, compressedMessage.Length);
+                    byte[][] packagesToSendArray = packagesToSendList.ToArray();
+                    byte[] compressedMessage;
 
-                EResult eresult;
-                long messagesSentCount;
-                if (BN_Utils.IsDedicated()) {
-                    eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
-                } else {
-                    eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
-                }
+                    using (MemoryStream compressedPackagesStream = new MemoryStream()) {
+                        using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
 
-                Marshal.FreeHGlobal(intPtr);
+                            compressedPackagesWriter.Write(packagesToSendCount); // number of packages
 
-                // ensure message was sent
+                            for (int i = 0; i < packagesToSendCount; i++) {
+                                compressedPackagesWriter.Write(packagesToSendArray[i].Length); // length of package
+                                compressedPackagesWriter.Write(packagesToSendArray[i]); // package
+                            }
 
-                if (eresult != EResult.k_EResultOK) {
-                    BN_Logger.LogError($"Compressed Send ({BN_Utils.GetPeerName(peer)}): ERROR {eresult}; disabling compression for this message; please notify mod author");
-                    return true;
-                }
+                            compressedPackagesWriter.Flush();
+                            compressedMessage = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
+                        }
+                    }
 
-                // remove sent messages from queue
+                    // send message
 
-                ___m_totalSent += compressedMessage.Length;
-                for (int i = 0; i < packagesToSendCount; i++) {
-                    ___m_sendQueue.Dequeue();
-                }
+                    IntPtr intPtr = Marshal.AllocHGlobal(compressedMessage.Length);
+                    Marshal.Copy(compressedMessage, 0, intPtr, compressedMessage.Length);
 
-                // log result
+                    EResult eresult;
+                    long messagesSentCount;
+                    if (BN_Utils.IsDedicated()) {
+                        eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
+                    } else {
+                        eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
+                    }
 
-                if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
-                    if (packagesToSendLength > 256) { // small messages don't compress well but they also don't matter
-                        float compressedSizePercentage = ((float)compressedMessage.Length / (float)packagesToSendLength) * 100;
-                        BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {packagesToSendLength} B compressed to {compressedSizePercentage.ToString("0")}%");
+                    Marshal.FreeHGlobal(intPtr);
+
+                    // ensure message was sent
+
+                    if (eresult != EResult.k_EResultOK) {
+                        BN_Logger.LogError($"Compressed Send ({BN_Utils.GetPeerName(peer)}): ERROR {eresult}; disabling compression for this message; please notify mod author");
+                        return true;
+                    }
+
+                    // remove sent messages from queue
+
+                    ___m_totalSent += compressedMessage.Length;
+                    for (int i = 0; i < packagesToSendCount; i++) {
+                        ___m_sendQueue.Dequeue();
+                    }
+
+                    // log result
+
+                    if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
+                        if (packagesToSendLength > 256) { // small messages don't compress well but they also don't matter
+                            float compressedSizePercentage = ((float)compressedMessage.Length / (float)packagesToSendLength) * 100;
+                            BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {packagesToSendLength} B compressed to {compressedSizePercentage.ToString("0")}%");
+                        }
                     }
                 }
             }
