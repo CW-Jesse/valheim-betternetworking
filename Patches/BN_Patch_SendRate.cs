@@ -62,10 +62,10 @@ namespace CW_Jesse.BetterNetworking {
                     "If you have a low upload speed, lower this <i>below</i> your internet upload speed."
                 ));
 
-            configNetworkSendRateSettings_Listen();
+            ConfigNetworkSendRateSettings_Listen();
         }
 
-        public static void configNetworkSendRateSettings_Listen() {
+        public static void ConfigNetworkSendRateSettings_Listen() {
             BetterNetworking.configNetworkSendRateMin.SettingChanged += ConfigNetworkSendRateMin_SettingChanged;
             BetterNetworking.configNetworkSendRateMax.SettingChanged += ConfigNetworkSendRateMax_SettingChanged;
             BN_Logger.LogInfo("Started listening for user changes to NetworkSendRates");
@@ -96,7 +96,7 @@ namespace CW_Jesse.BetterNetworking {
             static private bool networkSendBufferSize_set = false;
 
 
-            public static int sendRateMin {
+            public static int SendRateMin {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMin.Value) {
                         case Options_NetworkSendRateMin._400:
@@ -113,7 +113,7 @@ namespace CW_Jesse.BetterNetworking {
                     return originalNetworkSendRateMin;
                 }
             }
-            public static int sendRateMax {
+            public static int SendRateMax {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMax.Value) {
                         case Options_NetworkSendRateMax._INF:
@@ -139,8 +139,8 @@ namespace CW_Jesse.BetterNetworking {
                     return;
                 }
 
-                BN_Logger.LogMessage($"Setting NetworkSendRateMin to {sendRateMin}");
-                SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMin, sendRateMin);
+                BN_Logger.LogMessage($"Setting NetworkSendRateMin to {SendRateMin}");
+                SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMin, SendRateMin);
             }
             public static void SetSendRateMaxFromConfig() {
                 if (!originalNetworkSendRateMax_set) {
@@ -148,8 +148,8 @@ namespace CW_Jesse.BetterNetworking {
                     return;
                 }
 
-                BN_Logger.LogMessage($"Setting NetworkSendRateMax to {sendRateMax}");
-                SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMax, sendRateMax);
+                BN_Logger.LogMessage($"Setting NetworkSendRateMax to {SendRateMax}");
+                SetSteamNetworkConfig(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMax, SendRateMax);
             }
             public static void SetSendBufferSize() {
                 networkSendBufferSize_set = true; // if the buffer sized is changed outside of this method, Valheim set it
