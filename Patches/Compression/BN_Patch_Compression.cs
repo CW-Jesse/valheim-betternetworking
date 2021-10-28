@@ -310,7 +310,7 @@ namespace CW_Jesse.BetterNetworking {
             public static bool PeerAdded(ZNetPeer peer) {
                 if (peer != null && peerStatuses.ContainsKey(peer)) { return true; }
 #if DEBUG
-                BN_Logger.LogError($"Compression: Peer not added: {BN_Utils.GetPeerName(peer)}");
+                BN_Logger.LogInfo($"Compression: Peer not added: {BN_Utils.GetPeerName(peer)}");
 #endif
                 return false;
             }
