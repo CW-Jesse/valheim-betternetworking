@@ -327,10 +327,10 @@ namespace CW_Jesse.BetterNetworking {
                     return false;
                 }
 
-                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {enabled}");
 
                 if (GetEnabled(peer) == enabled) {
-                    BN_Logger.LogMessage($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+                    BN_Logger.LogMessage($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {enabled}");
                     return true;
                 }
 
