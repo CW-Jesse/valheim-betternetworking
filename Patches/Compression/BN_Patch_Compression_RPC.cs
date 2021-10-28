@@ -15,7 +15,7 @@ namespace CW_Jesse.BetterNetworking {
 
         private static void SendCompressionEnabledStatus(ZNetPeer peer, int compressionEnabled) {
             BN_Logger.LogMessage($"Compression: Sending compression status to {BN_Utils.GetPeerName(peer)}: {compressionEnabled}");
-            peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { CompressionStatus.COMPRESSION_STATUS_DISABLED });
+            peer.m_rpc.Invoke(RPC_COMPRESSION_STATUS, new object[] { compressionEnabled });
         }
 
         public static void SendCompressionEnabledStatus(int compressionEnabled) {
