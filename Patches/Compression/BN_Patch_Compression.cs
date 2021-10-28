@@ -93,21 +93,19 @@ namespace CW_Jesse.BetterNetworking {
 
                 while (___m_sendQueue.Count > 0) {
 
-                    int packagesToSendCount = 0;
                     int packagesToSendLength = 0;
 
                     // determine how many packages to send in a single message
 
                     List<byte[]> packagesToSendList = new List<byte[]>();
                     foreach (byte[] package in ___m_sendQueue) {
-                        if (packagesToSendCount > 0 && // send at least one package
+                        if (packagesToSendList.Count > 0 && // send at least one package
                             packagesToSendLength + package.Length > k_cbMaxSteamNetworkingSocketsMessageSizeSend) { // packages must not exceed steam message send size limit uncompressed (assumes successful compression)
-                            BN_Logger.LogMessage($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached send limit ({packagesToSendLength}/{k_cbMaxSteamNetworkingSocketsMessageSizeSend}); sending queued packages in another message");
+                            BN_Logger.LogMessage($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached send limit: {packagesToSendList.Count} packages size: {packagesToSendLength}/{k_cbMaxSteamNetworkingSocketsMessageSizeSend}; sending {___m_sendQueue.Count - packagesToSendList.Count} queued packages in another message");
                             break;
                         }
 
                         packagesToSendLength += package.Length;
-                        packagesToSendCount += 1;
                         packagesToSendList.Add(package);
                     }
 
@@ -119,9 +117,9 @@ namespace CW_Jesse.BetterNetworking {
                     using (MemoryStream compressedPackagesStream = new MemoryStream()) {
                         using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
 
-                            compressedPackagesWriter.Write(packagesToSendCount); // number of packages
+                            compressedPackagesWriter.Write(packagesToSendArray.Length); // number of packages
 
-                            for (int i = 0; i < packagesToSendCount; i++) {
+                            for (int i = 0; i < packagesToSendArray.Length; i++) {
                                 compressedPackagesWriter.Write(packagesToSendArray[i].Length); // length of package
                                 compressedPackagesWriter.Write(packagesToSendArray[i]); // package
                             }
@@ -130,6 +128,10 @@ namespace CW_Jesse.BetterNetworking {
                             compressedMessage = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
                         }
                     }
+
+#if DEBUG
+                    BN_Logger.LogInfo($"Compressed Send {BN_Utils.GetPeerName(peer)}: Message reduced from {packagesToSendLength} B to {compressedMessage.Length} B");
+#endif
 
                     // send message
 
@@ -156,7 +158,7 @@ namespace CW_Jesse.BetterNetworking {
                     // remove sent messages from queue
 
                     ___m_totalSent += compressedMessage.Length;
-                    for (int i = 0; i < packagesToSendCount; i++) {
+                    for (int i = 0; i < packagesToSendArray.Length; i++) {
                         ___m_sendQueue.Dequeue();
                     }
 
@@ -328,13 +330,14 @@ namespace CW_Jesse.BetterNetworking {
                     return false;
                 }
 
-                peerStatuses[peer].enabled = enabled;
                 BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
 
                 if (GetEnabled(peer) == enabled) {
                     BN_Logger.LogMessage($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
                     return true;
                 }
+
+                peerStatuses[peer].enabled = enabled;
 
                 BN_Logger.LogMessage($"Compression: Compression with {BN_Utils.GetPeerName(peer)}: {(EnabledWith(peer) ? "enabled" : "disabled")}");
 
