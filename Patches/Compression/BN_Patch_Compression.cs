@@ -221,6 +221,8 @@ namespace CW_Jesse.BetterNetworking {
 
                 byte[] compressedPackages = new byte[steamNetworkingMessage_t.m_cbSize];
                 Marshal.Copy(steamNetworkingMessage_t.m_pData, compressedPackages, 0, steamNetworkingMessage_t.m_cbSize);
+                steamNetworkingMessage_t.m_pfnRelease = array[0];
+                steamNetworkingMessage_t.Release();
 
                 byte[] uncompressedPackages;
                 try {
@@ -229,8 +231,6 @@ namespace CW_Jesse.BetterNetworking {
                     BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): Couldn't decompress message; assuming uncompressed");
 
                     ZPackage zpackage = new ZPackage(compressedPackages);
-                    steamNetworkingMessage_t.m_pfnRelease = array[0];
-                    steamNetworkingMessage_t.Release();
                     ___m_totalRecv += zpackage.Size();
                     ___m_gotData = true;
                     __result = zpackage;
@@ -243,9 +243,6 @@ namespace CW_Jesse.BetterNetworking {
                         BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): {uncompressedPackages.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
                     }
                 }
-
-                steamNetworkingMessage_t.m_pfnRelease = array[0];
-                steamNetworkingMessage_t.Release();
 
                 using (MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages)) {
                     using (BinaryReader uncompressedPackagesReader = new BinaryReader(uncompressedPackagesStream)) {
@@ -326,7 +323,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static bool SetEnabled(ZNetPeer peer, int enabled) {
                 if (!PeerAdded(peer)) {
-                    BN_Logger.LogError($"Compression: Could not set status for unadded peer {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+                    BN_Logger.LogError($"Compression: Could not set status for unadded peer {BN_Utils.GetPeerName(peer)}: {enabled}");
                     return false;
                 }
 
