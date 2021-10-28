@@ -5,7 +5,7 @@ using HarmonyLib;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.2.1")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.2.2")]
     [BepInIncompatibility("Steel.ValheimMod")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]
     public class BetterNetworking : BaseUnityPlugin {
