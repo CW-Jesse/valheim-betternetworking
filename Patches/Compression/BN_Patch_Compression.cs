@@ -102,7 +102,7 @@ namespace CW_Jesse.BetterNetworking {
                     foreach (byte[] package in ___m_sendQueue) {
                         if (packagesToSendCount > 0 && // send at least one package
                             packagesToSendLength + package.Length > k_cbMaxSteamNetworkingSocketsMessageSizeSend) { // packages must not exceed steam message send size limit uncompressed (assumes successful compression)
-                            BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached limit of {k_cbMaxSteamNetworkingSocketsMessageSizeSend}; sending queued packages in another message");
+                            BN_Logger.LogMessage($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached send limit ({packagesToSendLength}/{k_cbMaxSteamNetworkingSocketsMessageSizeSend}); sending queued packages in another message");
                             break;
                         }
 
@@ -328,14 +328,14 @@ namespace CW_Jesse.BetterNetworking {
                     return false;
                 }
 
+                peerStatuses[peer].enabled = enabled;
+                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+
                 if (GetEnabled(peer) == enabled) {
-                    BN_Logger.LogError($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
+                    BN_Logger.LogMessage($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
                     return true;
                 }
 
-                peerStatuses[peer].enabled = enabled;
-
-                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {(enabled == COMPRESSION_STATUS_ENABLED ? "enabled" : "disabled")}");
                 BN_Logger.LogMessage($"Compression: Compression with {BN_Utils.GetPeerName(peer)}: {(EnabledWith(peer) ? "enabled" : "disabled")}");
 
                 return true;
