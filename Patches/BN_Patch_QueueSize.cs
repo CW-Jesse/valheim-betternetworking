@@ -26,7 +26,7 @@ namespace CW_Jesse.BetterNetworking {
         public static void InitConfig(ConfigFile config) {
 
             BetterNetworking.configNetworkQueueSize = config.Bind(
-                "Networking",
+                "Networking (Steamworks)",
                 "Queue Size",
                 Options_NetworkQueueSize._1200,
                 new ConfigDescription(

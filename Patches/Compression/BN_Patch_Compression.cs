@@ -27,7 +27,7 @@ namespace CW_Jesse.BetterNetworking {
 
         public static void InitConfig(ConfigFile config) {
             BetterNetworking.configCompressionEnabled = config.Bind(
-                "Networking",
+                "Networking (Steamworks)",
                 "Compression Enabled",
                 Options_NetworkCompression.@true,
                 new ConfigDescription("Most people will want to keep this enabled.\n" +
@@ -41,34 +41,34 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         private static void SetCompressionEnabledFromConfig() {
-            int newCompressionStatus;
+            bool newCompressionStatus;
 
             if (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true) {
-                newCompressionStatus = CompressionStatus.COMPRESSION_STATUS_ENABLED;
+                newCompressionStatus = true;
                 BN_Logger.LogMessage($"Compression: Enabling");
             } else {
-                newCompressionStatus = CompressionStatus.COMPRESSION_STATUS_DISABLED;
+                newCompressionStatus = false;
                 BN_Logger.LogMessage($"Compression: Disabling");
             }
 
             SendCompressionEnabledStatus(newCompressionStatus);
 
-            CompressionStatus.status.enabled = newCompressionStatus;
+            CompressionStatus.ourStatus.compressionEnabled = newCompressionStatus;
         }
 
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
         [HarmonyPostfix]
         private static void OnConnect(ref ZNetPeer peer) {
-            CompressionStatus.Add(peer);
+            CompressionStatus.AddPeer(peer);
 
             RegisterRPCs(peer);
-            SendCompressionVersion(peer, CompressionStatus.status.version);
+            SendCompressionVersion(peer, CompressionStatus.ourStatus.version);
         }
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPostfix]
         private static void OnDisconnect(ZNetPeer peer) {
-            CompressionStatus.Remove(peer);
+            CompressionStatus.RemovePeer(peer);
         }
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
@@ -79,7 +79,7 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.EnabledWith(peer)) {
+            if (!CompressionStatus.GetSendCompressionEnabled(peer)) {
 #if DEBUG
                 BN_Logger.LogInfo($"Compressed Send: Sending uncompressed message to {BN_Utils.GetPeerName(peer)}");
 #endif
@@ -197,7 +197,7 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.EnabledWith(peer)) {
+            if (!CompressionStatus.GetReceiveCompressionEnabled(peer)) {
 #if DEBUG
                 BN_Logger.LogInfo($"Compressed Receive: Receiving uncompressed message from {BN_Utils.GetPeerName(peer)}");
 #endif
@@ -271,105 +271,85 @@ namespace CW_Jesse.BetterNetworking {
 
             public const int COMPRESSION_VERSION_UNKNOWN = 0;
 
-            public const int COMPRESSION_STATUS_ENABLED = 1;
-            public const int COMPRESSION_STATUS_DISABLED = 0;
-
-            public static PeerCompressionStatus status = new PeerCompressionStatus() { version = COMPRESSION_VERSION, enabled = (BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true ? 1 : 0) };
+            public static PeerCompressionStatus ourStatus = new PeerCompressionStatus() { version = COMPRESSION_VERSION, compressionEnabled = BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true };
             private readonly static Dictionary<ZNetPeer, PeerCompressionStatus> peerStatuses = new Dictionary<ZNetPeer, PeerCompressionStatus>();
             public class PeerCompressionStatus {
                 public int version = COMPRESSION_VERSION_UNKNOWN;
-                public int enabled = 0;
+                public bool compressionEnabled = false;
+                public bool receivingCompressed = false;
+                public bool sendingCompressed = false;
             }
-            public static bool Add(ZNetPeer peer) {
+            public static bool AddPeer(ZNetPeer peer) {
                 if (peer == null) {
                     BN_Logger.LogError("Compression: Tried to add null peer");
                     return false;
                 }
 
-                if (peerStatuses.ContainsKey(peer)) {
-                    BN_Logger.LogError($"Compression: Tried to add already added peer: {BN_Utils.GetPeerName(peer)}");
-                    return true;
-                }
-
                 peerStatuses.Add(peer, new PeerCompressionStatus());
-                BN_Logger.LogMessage($"Compression: Added {BN_Utils.GetPeerName(peer)}");
                 return true;
             }
-            public static void Remove(ZNetPeer peer) {
-                if (!PeerAdded(peer)) {
+            public static void RemovePeer(ZNetPeer peer) {
+                if (!IsPeerExist(peer)) {
                     BN_Logger.LogError($"Compression: Tried to remove non-existent peer: {BN_Utils.GetPeerName(peer)}");
                     return;
                 }
 
-                BN_Logger.LogMessage($"Compression: Removing {BN_Utils.GetPeerName(peer)}");
                 peerStatuses.Remove(peer);
             }
-            public static bool PeerAdded(ZNetPeer peer) {
+            public static bool IsPeerExist(ZNetPeer peer) {
                 if (peer != null && peerStatuses.ContainsKey(peer)) { return true; }
-#if DEBUG
-                BN_Logger.LogInfo($"Compression: Peer not added: {BN_Utils.GetPeerName(peer)}");
-#endif
                 return false;
             }
 
-            public static bool EnabledWith(ZNetPeer peer) {
-                return ((CompressionStatus.VersionCompatibleWith(peer)) &&
-                        (status.enabled   == COMPRESSION_STATUS_ENABLED) &&
-                        (GetEnabled(peer) == COMPRESSION_STATUS_ENABLED));
-            }
-            public static int GetEnabled(ZNetPeer peer) {
-                if (!PeerAdded(peer)) { return COMPRESSION_STATUS_DISABLED; }
-                return peerStatuses[peer].enabled;
-            }
-            public static bool SetEnabled(ZNetPeer peer, int enabled) {
-                if (!PeerAdded(peer)) {
-                    BN_Logger.LogError($"Compression: Could not set status for unadded peer {BN_Utils.GetPeerName(peer)}: {enabled}");
-                    return false;
-                }
-
-                BN_Logger.LogMessage($"Compression: Received compression status from {BN_Utils.GetPeerName(peer)}: {enabled}");
-
-                if (GetEnabled(peer) == enabled) {
-                    BN_Logger.LogMessage($"Compression: Compression for {BN_Utils.GetPeerName(peer)} is already {enabled}");
-                    return true;
-                }
-
-                peerStatuses[peer].enabled = enabled;
-
-                BN_Logger.LogMessage($"Compression: Compression with {BN_Utils.GetPeerName(peer)}: {(EnabledWith(peer) ? "enabled" : "disabled")}");
-
-                return true;
-            }
-
-            public static bool VersionCompatibleWith(ZNetPeer peer) {
-                return (status.version > 0 && GetVersion(peer) > 0 && status.version == GetVersion(peer));
-            }
             public static int GetVersion(ZNetPeer peer) {
-                if (!PeerAdded(peer)) { return 0; }
+                if (!IsPeerExist(peer)) { return 0; }
                 return peerStatuses[peer].version;
             }
-            public static bool SetVersion(ZNetPeer peer, int version) {
-                if (!PeerAdded(peer)) {
-                    BN_Logger.LogError($"Compression: Couldn't set version for {BN_Utils.GetPeerName(peer)} ({version})");
-                    return false;
-                }
+            public static bool SetVersion(ZNetPeer peer, int theirVersion) {
+                if (!IsPeerExist(peer)) { return false; }
 
-                if (GetVersion(peer) == version) {
-                    BN_Logger.LogError($"Compression: Version already set for {BN_Utils.GetPeerName(peer)}: {version}");
-                    return true;
-                }
+                peerStatuses[peer].version = theirVersion;
 
-                peerStatuses[peer].version = version;
-
-                if (status.version == version) {
-                    BN_Logger.LogMessage($"Compression: Compression compatible with {BN_Utils.GetPeerName(peer)} ({version})");
-                } else if (status.version > version) {
-                    BN_Logger.LogWarning($"Compression: {BN_Utils.GetPeerName(peer)} ({version}) has an earlier version of Better Networking; they should update");
-                } else {
-                    BN_Logger.LogError($"Compression: {BN_Utils.GetPeerName(peer)} ({version}) has a later version of Better Networking; you should update");
+                if (ourStatus.version == theirVersion) {
+                    BN_Logger.LogMessage($"Compression: Compression compatible with {BN_Utils.GetPeerName(peer)} ({theirVersion})");
+                } else if (ourStatus.version > theirVersion) {
+                    BN_Logger.LogWarning($"Compression: {BN_Utils.GetPeerName(peer)} ({theirVersion}) has an older version of Better Networking; they should update");
+                } else if (theirVersion > 0) {
+                    BN_Logger.LogError($"Compression: {BN_Utils.GetPeerName(peer)} ({theirVersion}) has a newer version of Better Networking; you should update");
                 }
 
                 return true;
+            }
+            public static bool GetIsCompatibleWith(ZNetPeer peer) {
+                if (!IsPeerExist(peer)) { return false; }
+                return (ourStatus.version == GetVersion(peer));
+            }
+
+            public static bool GetCompressionEnabled(ZNetPeer peer) {
+                if (!IsPeerExist(peer)) { return false; }
+                return peerStatuses[peer].compressionEnabled;
+            }
+            public static void SetCompressionEnabled(ZNetPeer peer, bool enabled) {
+                if (!IsPeerExist(peer)) { return; }
+                peerStatuses[peer].compressionEnabled = enabled;
+            }
+
+            public static bool GetSendCompressionStarted(ZNetPeer peer) {
+                if (!IsPeerExist(peer)) { return false; }
+                return peerStatuses[peer].sendingCompressed;
+            }
+            public static void SetSendCompressionStarted(ZNetPeer peer, bool started) {
+                if (!IsPeerExist(peer)) { return; }
+                peerStatuses[peer].sendingCompressed = started;
+            }
+
+            public static bool GetReceiveCompressionStarted(ZNetPeer peer) {
+                if (!IsPeerExist(peer)) { return false; }
+                return peerStatuses[peer].receivingCompressed;
+            }
+            public static void SetReceiveCompressionStarted(ZNetPeer peer, bool started) {
+                if (!IsPeerExist(peer)) { return; }
+                peerStatuses[peer].receivingCompressed = started;
             }
         }
     }

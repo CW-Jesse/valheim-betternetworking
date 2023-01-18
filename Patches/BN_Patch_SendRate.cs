@@ -46,7 +46,7 @@ namespace CW_Jesse.BetterNetworking {
         public static void InitConfig(ConfigFile config) {
 
             BetterNetworking.configNetworkSendRateMin = config.Bind(
-                "Networking",
+                "Networking (Steamworks)",
                 "Minimum Send Rate",
                 Options_NetworkSendRateMin._300,
                 new ConfigDescription(
