@@ -11,13 +11,13 @@
 
   <ItemGroup>
     <Reference Include="K4os.Compression.LZ4">
-      <HintPath>..\..\packages\K4os.Compression.LZ4.1.2.13\lib\net5.0\K4os.Compression.LZ4.dll</HintPath>
+      <HintPath>..\packages\K4os.Compression.LZ4.1.2.13\lib\net5.0\K4os.Compression.LZ4.dll</HintPath>
     </Reference>
     <Reference Include="PlayFab">
-      <HintPath>..\..\libs-Valheim\PlayFab.dll</HintPath>
+      <HintPath>..\libs-Valheim\PlayFab.dll</HintPath>
     </Reference>
     <Reference Include="ZstdNet">
-      <HintPath>..\..\ZstdNet\ZstdNet.dll</HintPath>
+      <HintPath>..\ZstdNet\ZstdNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
