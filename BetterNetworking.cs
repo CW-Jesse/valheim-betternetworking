@@ -5,7 +5,7 @@ using HarmonyLib;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.2.2")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "1.3.0")]
     [BepInIncompatibility("Steel.ValheimMod")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]
     public class BetterNetworking : BaseUnityPlugin {
@@ -13,6 +13,7 @@ namespace CW_Jesse.BetterNetworking {
         private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
 
         public static ConfigEntry<BN_Logger.Options_Logger_LogLevel> configLogMessages;
+        public static ConfigEntry<BN_Patch_ForceCrossplay.Options_ForceCrossplay> configForceCrossplay;
         public static ConfigEntry<BN_Patch_Compression.Options_NetworkCompression> configCompressionEnabled;
         public static ConfigEntry<BN_Patch_UpdateRate.Options_NetworkUpdateRates> configNetworkUpdateRate;
         public static ConfigEntry<BN_Patch_SendRate.Options_NetworkSendRateMin> configNetworkSendRateMin;
@@ -22,6 +23,7 @@ namespace CW_Jesse.BetterNetworking {
         void Awake() {
 
             BN_Logger.Init(base.Logger, Config);
+            BN_Patch_ForceCrossplay.InitConfig(Config);
             BN_Patch_Compression.InitConfig(Config);
             BN_Patch_UpdateRate.InitConfig(Config);
             BN_Patch_SendRate.InitConfig(Config);

@@ -234,6 +234,7 @@
   <ItemGroup>
     <Compile Include="BetterNetworking.cs" />
     <Compile Include="BN_Logger.cs" />
+    <Compile Include="Patches\BN_Patch_ForceCrossplay.cs" />
     <Compile Include="Patches\Compression\BN_Patch_Compression_RPC.cs" />
     <Compile Include="Patches\BN_Patch_UpdateRate.cs" />
     <Compile Include="Patches\BN_Patch_SendRate.cs" />
