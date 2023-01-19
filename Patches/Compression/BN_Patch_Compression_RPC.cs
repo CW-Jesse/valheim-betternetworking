@@ -19,6 +19,15 @@ namespace CW_Jesse.BetterNetworking {
         private static void RPC_CompressionVersion(ZRpc rpc, int version) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
             CompressionStatus.SetVersion(peer, version);
+
+            if (CompressionStatus.ourStatus.version == version) {
+                BN_Logger.LogMessage($"Compression possible with {BN_Utils.GetPeerName(peer)}");
+            } else if (CompressionStatus.ourStatus.version > version) {
+                BN_Logger.LogWarning($"{BN_Utils.GetPeerName(peer)} ({version}) has an older version of Better Networking; they should update");
+            } else if (version > 0) {
+                BN_Logger.LogError($"{BN_Utils.GetPeerName(peer)} ({version}) has a newer version of Better Networking; you should update");
+            }
+
             if (CompressionStatus.GetIsCompatibleWith(peer)) {
                 SendCompressionEnabledStatus(peer, CompressionStatus.ourStatus.compressionEnabled);
             }
@@ -50,10 +59,12 @@ namespace CW_Jesse.BetterNetworking {
             if (ZNet.instance == null) { return; }
             peer.m_rpc.Invoke(RPC_COMPRESSION_STARTED, new object[] { started });
             CompressionStatus.SetSendCompressionStarted(peer, started);
+            BN_Logger.LogMessage($"Compression to {BN_Utils.GetPeerName(peer)}: {started}");
         }
         private static void RPC_CompressionStarted(ZRpc rpc, bool started) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
             CompressionStatus.SetReceiveCompressionStarted(peer, started);
+            BN_Logger.LogMessage($"Compression from {BN_Utils.GetPeerName(peer)}: {started}");
         }
     }
 }

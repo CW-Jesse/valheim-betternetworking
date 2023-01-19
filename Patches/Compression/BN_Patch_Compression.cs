@@ -79,7 +79,7 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetSendCompressionEnabled(peer)) {
+            if (!CompressionStatus.GetSendCompressionStarted(peer)) {
 #if DEBUG
                 BN_Logger.LogInfo($"Compressed Send: Sending uncompressed message to {BN_Utils.GetPeerName(peer)}");
 #endif
@@ -197,7 +197,7 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetReceiveCompressionEnabled(peer)) {
+            if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
 #if DEBUG
                 BN_Logger.LogInfo($"Compressed Receive: Receiving uncompressed message from {BN_Utils.GetPeerName(peer)}");
 #endif
@@ -305,20 +305,9 @@ namespace CW_Jesse.BetterNetworking {
                 if (!IsPeerExist(peer)) { return 0; }
                 return peerStatuses[peer].version;
             }
-            public static bool SetVersion(ZNetPeer peer, int theirVersion) {
-                if (!IsPeerExist(peer)) { return false; }
-
+            public static void SetVersion(ZNetPeer peer, int theirVersion) {
+                if (!IsPeerExist(peer)) { return; }
                 peerStatuses[peer].version = theirVersion;
-
-                if (ourStatus.version == theirVersion) {
-                    BN_Logger.LogMessage($"Compression: Compression compatible with {BN_Utils.GetPeerName(peer)} ({theirVersion})");
-                } else if (ourStatus.version > theirVersion) {
-                    BN_Logger.LogWarning($"Compression: {BN_Utils.GetPeerName(peer)} ({theirVersion}) has an older version of Better Networking; they should update");
-                } else if (theirVersion > 0) {
-                    BN_Logger.LogError($"Compression: {BN_Utils.GetPeerName(peer)} ({theirVersion}) has a newer version of Better Networking; you should update");
-                }
-
-                return true;
             }
             public static bool GetIsCompatibleWith(ZNetPeer peer) {
                 if (!IsPeerExist(peer)) { return false; }
