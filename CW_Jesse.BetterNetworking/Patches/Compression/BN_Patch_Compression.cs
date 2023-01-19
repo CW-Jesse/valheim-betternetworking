@@ -18,8 +18,8 @@ namespace CW_Jesse.BetterNetworking {
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
 
-        private static Compressor compressor = new Compressor(new CompressionOptions(1));
-        private static Decompressor decompressor = new Decompressor();
+        private static Compressor compressor;
+        private static Decompressor decompressor;
 
         public enum Options_NetworkCompression {
             [Description("Enabled <b>[default]</b>")]
@@ -29,6 +29,13 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         public static void InitConfig(ConfigFile config) {
+
+            Stream dictStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("CW_Jesse.BetterNetworking.dict.small");
+            byte[] compressionDict = new byte[dictStream.Length];
+            dictStream.Read(compressionDict, 0, (int)dictStream.Length);
+            compressor = new Compressor(new CompressionOptions(compressionDict, 1));
+            decompressor = new Decompressor(new DecompressionOptions(compressionDict));
+
             BetterNetworking.configCompressionEnabled = config.Bind(
                 "Networking (Steamworks)",
                 "Compression Enabled",
@@ -74,9 +81,21 @@ namespace CW_Jesse.BetterNetworking {
             CompressionStatus.RemovePeer(peer);
         }
 
+        //private static int capCount = 0;
+        //[HarmonyPatch(typeof(ZPlayFabSocket), "InternalSend")]
+        //[HarmonyPostfix]
+        //private static void PlayFab_SendCompressedPackage(byte[] payload) {
+        //    string CaptureFolderName = "cap";
+        //    BN_Logger.LogWarning(payload.Length);
+        //    //return true;
+        //    Directory.CreateDirectory(CaptureFolderName);
+        //    File.WriteAllBytes(CaptureFolderName + Path.DirectorySeparatorChar + capCount, payload);
+        //    capCount++;
+        //}
+
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
-        private static bool SendCompressedPackages(ref ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
+        private static bool Steamworks_SendCompressedPackages(ref ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
             if (!__instance.IsConnected()) {
                 return false;
             }

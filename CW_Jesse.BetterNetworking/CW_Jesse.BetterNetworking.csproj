@@ -246,6 +246,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <EmbeddedResource Include="dict\big" />
+    <EmbeddedResource Include="dict\small" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
