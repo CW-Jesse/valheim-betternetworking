@@ -6,7 +6,7 @@ using System.IO;
 
 using HarmonyLib;
 using Steamworks;
-using K4os.Compression.LZ4;
+using ZstdNet;
 using BepInEx.Configuration;
 
 namespace CW_Jesse.BetterNetworking {
@@ -17,6 +17,9 @@ namespace CW_Jesse.BetterNetworking {
 
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
+
+        private static Compressor compressor = new Compressor(new CompressionOptions(1));
+        private static Decompressor decompressor = new Decompressor();
 
         public enum Options_NetworkCompression {
             [Description("Enabled <b>[default]</b>")]
@@ -125,7 +128,7 @@ namespace CW_Jesse.BetterNetworking {
                             }
 
                             compressedPackagesWriter.Flush();
-                            compressedMessage = LZ4Pickler.Pickle(compressedPackagesStream.ToArray());
+                            compressedMessage = compressor.Wrap(compressedPackagesStream.ToArray());
                         }
                     }
 
@@ -226,7 +229,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 byte[] uncompressedPackages;
                 try {
-                    uncompressedPackages = LZ4Pickler.Unpickle(compressedPackages);
+                    uncompressedPackages = decompressor.Unwrap(compressedPackages);
                 } catch {
                     BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): Couldn't decompress message; assuming uncompressed");
 

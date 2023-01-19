@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿using System.Runtime.InteropServices;
+using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
