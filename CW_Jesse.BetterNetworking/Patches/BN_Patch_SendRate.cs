@@ -50,15 +50,15 @@ namespace CW_Jesse.BetterNetworking {
                 "Minimum Send Rate",
                 Options_NetworkSendRateMin._300,
                 new ConfigDescription(
-                    "The minimum speed Steam can <i>attempt</i> to send data.\n" +
+                    "Steamworks: The minimum speed Steam can <i>attempt</i> to send data.\n" +
                     "<b>Lower this below your internet upload speed.</b>"
                 ));
             BetterNetworking.configNetworkSendRateMax = config.Bind(
-                "Networking",
+                "Networking (Steamworks)",
                 "Maximum Send Rate",
                 Options_NetworkSendRateMax._INF,
                 new ConfigDescription(
-                    "The maximum speed Steam can <i>attempt</i> to send data.\n" +
+                    "Steamworks: The maximum speed Steam can <i>attempt</i> to send data.\n" +
                     "If you have a low upload speed, lower this <i>below</i> your internet upload speed."
                 ));
 

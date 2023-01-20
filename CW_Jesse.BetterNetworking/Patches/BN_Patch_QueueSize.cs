@@ -30,7 +30,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Queue Size",
                 Options_NetworkQueueSize._1200,
                 new ConfigDescription(
-                    "If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
+                    "Steamworks: If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
                     "---\n" +
                     "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
                 ));

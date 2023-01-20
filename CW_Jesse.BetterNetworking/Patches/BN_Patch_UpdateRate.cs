@@ -21,7 +21,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
+                    "PlayFab/Steamworks: Allows you to reduce how often your computer sends updates. Can reduce network stress."
                 ));
         }
 

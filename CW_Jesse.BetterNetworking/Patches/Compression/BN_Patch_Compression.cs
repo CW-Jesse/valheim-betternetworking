@@ -38,12 +38,12 @@ namespace CW_Jesse.BetterNetworking {
             decompressor = new Decompressor(new DecompressionOptions(compressionDict));
 
             BetterNetworking.configCompressionEnabled = config.Bind(
-                "Networking (Steamworks)",
+                "Networking",
                 "Compression Enabled",
                 Options_NetworkCompression.@true,
                 new ConfigDescription("Most people will want to keep this enabled.\n" +
                 "---\n" +
-                "If your internet is great and your computer isn't, then try lowering your update rate, lowering your queue size, and/or disabling compression."));
+                "PlayFab/Steamworks: Increases speed and strength of network compression.\nSteamworks: Adds network compression."));
 
             BetterNetworking.configCompressionEnabled.SettingChanged += ConfigCompressionEnabled_SettingChanged;
         }

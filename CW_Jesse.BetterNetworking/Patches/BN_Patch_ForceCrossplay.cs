@@ -20,7 +20,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Force Crossplay",
                 Options_ForceCrossplay.@true,
                 new ConfigDescription(
-                    "Forces dedicated servers to use new Azure PlayFab networking stack. Requires restart."
+                    "Forces dedicated servers to use new PlayFab networking stack. Requires restart."
                 ));
         }
 
