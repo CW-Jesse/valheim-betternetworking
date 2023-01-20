@@ -11,26 +11,26 @@ namespace CW_Jesse.BetterNetworking {
         private const int DEFAULT_MINIMUM_QUEUE_SIZE = 2048;
 
         public enum Options_NetworkQueueSize {
-            [Description("2400% (240 KB)")]
-            _2400,
-            [Description("1200% (120 KB) <b>[default]</b>")]
-            _1200,
-            [Description("600% (60 KB)")]
-            _600,
-            [Description("300% (30 KB)")]
-            _300,
-            [Description("100% (10 KB)")]
-            _100
+            [Description("10240 KB")]
+            _10240,
+            [Description("1024 KB <b>[default]</b>")]
+            _1024,
+            [Description("512 KB")]
+            _512,
+            [Description("128 KB")]
+            _128,
+            [Description("10 KB [original]")]
+            _10
         }
 
         public static void InitConfig(ConfigFile config) {
 
             BetterNetworking.configNetworkQueueSize = config.Bind(
-                "Networking (Steamworks)",
+                "Networking",
                 "Queue Size",
-                Options_NetworkQueueSize._1200,
+                Options_NetworkQueueSize._1024,
                 new ConfigDescription(
-                    "Steamworks: If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
+                    "If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
                     "---\n" +
                     "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
                 ));
@@ -43,17 +43,17 @@ namespace CW_Jesse.BetterNetworking {
             int originalQueueSize = __result;
 #endif
             switch (BetterNetworking.configNetworkQueueSize.Value) {
-                case Options_NetworkQueueSize._2400:
-                    __result -= DEFAULT_QUEUE_SIZE * 23;
+                case Options_NetworkQueueSize._10240:
+                    __result -= 10240 * 1024 + DEFAULT_QUEUE_SIZE;
                     break;
-                case Options_NetworkQueueSize._1200:
-                    __result -= DEFAULT_QUEUE_SIZE * 11;
+                case Options_NetworkQueueSize._1024:
+                    __result -= 1024 * 1024 + DEFAULT_QUEUE_SIZE;
                     break;
-                case Options_NetworkQueueSize._600:
-                    __result -= DEFAULT_QUEUE_SIZE * 5;
+                case Options_NetworkQueueSize._512:
+                    __result -= 512 * 1024 + DEFAULT_QUEUE_SIZE;
                     break;
-                case Options_NetworkQueueSize._300:
-                    __result -= DEFAULT_QUEUE_SIZE * 2;
+                case Options_NetworkQueueSize._128:
+                    __result -= 128 * 1024 + DEFAULT_QUEUE_SIZE;
                     break;
             }
 
