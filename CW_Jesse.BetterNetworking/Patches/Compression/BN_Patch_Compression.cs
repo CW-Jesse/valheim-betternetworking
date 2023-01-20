@@ -223,7 +223,7 @@ namespace CW_Jesse.BetterNetworking {
                     // ensure message was sent
 
                     if (eresult != EResult.k_EResultOK) {
-                        BN_Logger.LogError($"Compressed Send ({BN_Utils.GetPeerName(peer)}): ERROR {eresult}; disabling compression for this message; please notify mod author");
+                        BN_Logger.LogWarning($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {eresult};");
                         return true;
                     }
 
@@ -353,7 +353,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static bool AddPeer(ZNetPeer peer) {
                 if (peer == null) {
-                    BN_Logger.LogError("Compression: Tried to add null peer");
+                    BN_Logger.LogWarning("Compression: Tried to add null peer");
                     return false;
                 }
 
@@ -362,7 +362,7 @@ namespace CW_Jesse.BetterNetworking {
             }
             public static void RemovePeer(ZNetPeer peer) {
                 if (!IsPeerExist(peer)) {
-                    BN_Logger.LogError($"Compression: Tried to remove non-existent peer: {BN_Utils.GetPeerName(peer)}");
+                    BN_Logger.LogWarning($"Compression: Tried to remove non-existent peer: {BN_Utils.GetPeerName(peer)}");
                     return;
                 }
 
