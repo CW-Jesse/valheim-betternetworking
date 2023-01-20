@@ -8,21 +8,21 @@ namespace CW_Jesse.BetterNetworking {
     [HarmonyPatch]
     public class BN_Patch_ForceCrossplay {
         public enum Options_ForceCrossplay {
-            [Description("Crossplay ENABLED <b>[default]</b>")]
+            [Description("Vanilla behaviour <b>[default]</b>")]
+            vanilla,
+            [Description("Crossplay ENABLED")]
             playfab,
             [Description("Crossplay DISABLED")]
-            steamworks,
-            [Description("Vanilla behaviour")]
-            vanilla
+            steamworks
         }
 
         public static void InitConfig(ConfigFile config) {
             BetterNetworking.configForceCrossplay = config.Bind(
                 "Networking",
                 "Force Crossplay",
-                Options_ForceCrossplay.playfab,
+                Options_ForceCrossplay.vanilla,
                 new ConfigDescription(
-                    "Requires restart./nCrossplay enabled: Forces dedicated servers to use new PlayFab networking stack./nCrossplay disabled: Forces dedicated servers to use Steamworks network stack./nVanilla behaviour: Listen for -crossplay flag."
+                    "Requires restart.\nCrossplay enabled: Forces dedicated servers to use new PlayFab networking stack.\nCrossplay disabled: Forces dedicated servers to use Steamworks network stack.\nVanilla behaviour: Listen for -crossplay flag."
                 ));
         }
 
