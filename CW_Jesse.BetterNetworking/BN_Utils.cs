@@ -8,7 +8,7 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
-            BN_Logger.LogError("Utils: Didn't find peer by RPC");
+            BN_Logger.LogWarning("Utils: Didn't find peer by RPC");
             return null;
         }
         public static ZNetPeer GetPeer(ZPlayFabSocket socket) {

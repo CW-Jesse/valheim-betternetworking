@@ -68,20 +68,17 @@ namespace CW_Jesse.BetterNetworking {
         public static void ConfigNetworkSendRateSettings_Listen() {
             BetterNetworking.configNetworkSendRateMin.SettingChanged += ConfigNetworkSendRateMin_SettingChanged;
             BetterNetworking.configNetworkSendRateMax.SettingChanged += ConfigNetworkSendRateMax_SettingChanged;
-            BN_Logger.LogInfo("Started listening for user changes to NetworkSendRates");
         }
 
         private static void ConfigNetworkSendRateMin_SettingChanged(object sender, EventArgs e) {
             if ((int)BetterNetworking.configNetworkSendRateMin.Value+1 < (int)BetterNetworking.configNetworkSendRateMax.Value) {
                 BetterNetworking.configNetworkSendRateMax.Value = (Options_NetworkSendRateMax)(BetterNetworking.configNetworkSendRateMin.Value+1);
-                BN_Logger.LogInfo("Maximum network send rate automatically increased");
             }
             NetworkSendRate_Patch.SetSendRateMinFromConfig();
         }
         private static void ConfigNetworkSendRateMax_SettingChanged(object sender, EventArgs e) {
             if ((int)BetterNetworking.configNetworkSendRateMax.Value > (int)BetterNetworking.configNetworkSendRateMin.Value+1) {
                 BetterNetworking.configNetworkSendRateMin.Value = (Options_NetworkSendRateMin)(BetterNetworking.configNetworkSendRateMax.Value-1);
-                BN_Logger.LogInfo("Minimum network send rate automatically decreased");
             }
             NetworkSendRate_Patch.SetSendRateMaxFromConfig();
         }
@@ -184,7 +181,7 @@ namespace CW_Jesse.BetterNetworking {
                             );
                     }
                 } catch {
-                    BN_Logger.LogError("Unable to set networking config; please notify the mod author");
+                    BN_Logger.LogError("Unable to set Steamworks networking config");
                 }
 
                 pinned_SendRate.Free();
@@ -209,7 +206,7 @@ namespace CW_Jesse.BetterNetworking {
                                 originalNetworkSendRateMin_set = true;
                                 originalNetworkSendRateMin = Marshal.ReadInt32(pArg);
 
-                                BN_Logger.LogMessage($"Valheim's default NetworkSendRateMin is {originalNetworkSendRateMin}");
+                                BN_Logger.LogInfo($"Valheim's default NetworkSendRateMin is {originalNetworkSendRateMin}");
                             }
                             break;
                         case ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendRateMax:
@@ -217,7 +214,7 @@ namespace CW_Jesse.BetterNetworking {
                                 originalNetworkSendRateMax_set = true;
                                 originalNetworkSendRateMax = Marshal.ReadInt32(pArg);
 
-                                BN_Logger.LogMessage($"Valheim's default NetworkSendRateMax is {originalNetworkSendRateMin}");
+                                BN_Logger.LogInfo($"Valheim's default NetworkSendRateMax is {originalNetworkSendRateMin}");
                             }
                             break;
                         case ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SendBufferSize:
