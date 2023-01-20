@@ -8,6 +8,7 @@ using HarmonyLib;
 using Steamworks;
 using ZstdNet;
 using BepInEx.Configuration;
+using PlayFab.Party;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -92,6 +93,55 @@ namespace CW_Jesse.BetterNetworking {
         //    File.WriteAllBytes(CaptureFolderName + Path.DirectorySeparatorChar + capCount, payload);
         //    capCount++;
         //}
+
+        [HarmonyPatch(typeof(ZPlayFabSocket), "InternalSend")]
+        [HarmonyPrefix]
+        private static bool PlayFab_Send(ref ZPlayFabSocket __instance, ref bool ___m_useCompression, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue, byte[] payload) {
+            if (!CompressionStatus.GetSendCompressionStarted(BN_Utils.GetPeer(__instance))) { return true; }
+
+            if ((bool)AccessTools.Method(typeof(ZPlayFabSocket), "PartyResetInProgress").Invoke(__instance, null))
+                return false;
+
+            AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { payload.Length });
+            if ((UnityEngine.Object)ZNet.instance != (UnityEngine.Object)null && ZNet.instance.HaveStopped)
+                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { compressor.Wrap(payload) });
+            else
+                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outCompress").GetValue(___m_zlibWorkQueue)).Enqueue(compressor.Wrap(payload));
+
+            return false;
+        }
+
+        [HarmonyPatch(typeof(ZPlayFabSocket), "OnDataMessageReceived")]
+        [HarmonyPrefix]
+        private static bool PlayFab_Receive(
+            ref ZPlayFabSocket __instance,
+            ref bool ___m_useCompression, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue, ref string ___m_remotePlayerId, ref bool ___m_isClient, ref bool ___m_didRecover,
+            object sender, PlayFabPlayer from, byte[] compressedBuffer) {
+            if (!CompressionStatus.GetSendCompressionStarted(BN_Utils.GetPeer(__instance))) { return true; }
+
+            if (!(from.EntityKey.Id == ___m_remotePlayerId))
+                return false;
+
+            AccessTools.Method(typeof(ZPlayFabSocket), "DelayedInit").Invoke(__instance, null);
+
+            if (!___m_isClient && ___m_didRecover)
+                AccessTools.Method(typeof(ZPlayFabSocket), "CheckReestablishConnection").Invoke(__instance, new object[] { compressedBuffer });
+            else
+                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outDecompress").GetValue(___m_zlibWorkQueue)).Enqueue(decompressor.Unwrap(compressedBuffer));
+
+            return false;
+        }
+
+        [HarmonyPatch(typeof(ZPlayFabSocket), "CheckReestablishConnection")]
+        [HarmonyPrefix]
+        private bool PlayFab_CheckReestablishConnection(ref ZPlayFabSocket __instance, byte[] maybeCompressedBuffer) {
+            try {
+                AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { decompressor.Unwrap(maybeCompressedBuffer) });
+            } catch {
+                return true;
+            }
+            return false;
+        }
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
