@@ -14,7 +14,7 @@ namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public partial class BN_Patch_Compression {
-        private const int COMPRESSION_VERSION = 3;
+        private const int COMPRESSION_VERSION = 4;
 
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
