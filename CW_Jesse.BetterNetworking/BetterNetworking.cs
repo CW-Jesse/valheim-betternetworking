@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
@@ -22,8 +24,10 @@ namespace CW_Jesse.BetterNetworking {
         public static ConfigEntry<BN_Patch_QueueSize.Options_NetworkQueueSize> configNetworkQueueSize;
 
         void Awake() {
-
             BN_Logger.Init(base.Logger, Config);
+
+            BN_Patch_Compression.InitCompressor();
+
             BN_Patch_ForceCrossplay.InitConfig(Config);
             BN_Patch_Compression.InitConfig(Config);
             BN_Patch_UpdateRate.InitConfig(Config);

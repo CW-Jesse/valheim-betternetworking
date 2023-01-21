@@ -29,14 +29,15 @@ namespace CW_Jesse.BetterNetworking {
             @false
         }
 
-        public static void InitConfig(ConfigFile config) {
-
+        public static void InitCompressor() {
             Stream dictStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("CW_Jesse.BetterNetworking.dict.small");
             byte[] compressionDict = new byte[dictStream.Length];
             dictStream.Read(compressionDict, 0, (int)dictStream.Length);
             compressor = new Compressor(new CompressionOptions(compressionDict, 1));
             decompressor = new Decompressor(new DecompressionOptions(compressionDict));
+        }
 
+        public static void InitConfig(ConfigFile config) {
             BetterNetworking.configCompressionEnabled = config.Bind(
                 "Networking",
                 "Compression Enabled",
