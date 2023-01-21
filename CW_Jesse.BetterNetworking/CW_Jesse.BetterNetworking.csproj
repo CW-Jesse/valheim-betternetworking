@@ -253,10 +253,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="costura64\CW_Jesse.BetterNetworking.libzstd.dll" />
+    <EmbeddedResource Include="costura64\cw_jesse.betternetworking.libzstd.dll" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="costura32\CW_Jesse.BetterNetworking.libzstd.dll" />
+    <EmbeddedResource Include="costura32\cw_jesse.betternetworking.libzstd.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.6.4\build\Fody.targets" Condition="Exists('..\packages\Fody.6.6.4\build\Fody.targets')" />

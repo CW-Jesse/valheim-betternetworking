@@ -33,7 +33,7 @@ namespace CW_Jesse.BetterNetworking {
 
         private static string ZSTD_RESOURCE_NAME64 = "costura64.cw_jesse.betternetworking.libzstd.dll";
         private static string ZSTD_RESOURCE_NAME32 = "costura32.cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_FILE_NAME = "CW_Jesse.BetterNetworking.libzstd.dll";
+        private static string ZSTD_FILE_NAME = "cw_jesse.betternetworking.libzstd";
         private static string ZSTD_PLUGIN_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName + Path.DirectorySeparatorChar;
         //private static string ZSTD_PLUGIN_PATH = BepInEx.Paths.PluginPath + Path.DirectorySeparatorChar;
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
