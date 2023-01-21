@@ -39,7 +39,7 @@ namespace CW_Jesse.BetterNetworking {
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
 
         public static void InitCompressor() {
-            BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
+            //BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
 
             string zstdResourceName = Environment.Is64BitProcess ? ZSTD_RESOURCE_NAME64 : ZSTD_RESOURCE_NAME32;
             using (Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(zstdResourceName)) {

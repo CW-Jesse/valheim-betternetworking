@@ -20,27 +20,18 @@
       <HintPath>..\libs-Valheim\PlayFab.dll</HintPath>
     </Reference>
     <Reference Include="ZstdNet">
-      <HintPath>..\..\ZstdNet\ZstdNet\bin\x64\Release\net480\ZstdNet.dll</HintPath>
+      <HintPath>..\..\ZstdNet\ZstdNet\bin\Release\net480\ZstdNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="libzstd.dll">
+    <None Update="cw_jesse.betternetworking.libzstd.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CW_Jesse.BetterNetworking.libzstd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="dict.dict">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestFile">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="TestFile1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="TestFile2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
