@@ -48,6 +48,7 @@ namespace CW_Jesse.BetterNetworking {
 #endif
 
         void OnDestroy() {
+            BN_Patch_Compression.UninitCompressor();
             harmony.UnpatchSelf();
         }
     }

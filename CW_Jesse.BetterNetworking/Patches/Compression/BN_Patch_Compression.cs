@@ -9,6 +9,8 @@ using Steamworks;
 using ZstdNet;
 using BepInEx.Configuration;
 using PlayFab.Party;
+using BepInEx;
+using System.Reflection;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -29,12 +31,33 @@ namespace CW_Jesse.BetterNetworking {
             @false
         }
 
+        private static string ZSTD_RESOURCE_NAME64 = "costura64.cw_jesse.betternetworking.libzstd.dll";
+        private static string ZSTD_RESOURCE_NAME32 = "costura32.cw_jesse.betternetworking.libzstd.dll";
+        private static string ZSTD_FILE_NAME = "CW_Jesse.BetterNetworking.libzstd.dll";
+        private static string ZSTD_PLUGIN_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName + Path.DirectorySeparatorChar;
+        //private static string ZSTD_PLUGIN_PATH = BepInEx.Paths.PluginPath + Path.DirectorySeparatorChar;
+        private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
+
         public static void InitCompressor() {
-            Stream dictStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("CW_Jesse.BetterNetworking.dict.small");
-            byte[] compressionDict = new byte[dictStream.Length];
-            dictStream.Read(compressionDict, 0, (int)dictStream.Length);
+            BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
+
+            string zstdResourceName = Environment.Is64BitProcess ? ZSTD_RESOURCE_NAME64 : ZSTD_RESOURCE_NAME32;
+            using (Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(zstdResourceName)) {
+                using (FileStream f = new FileStream(ZSTD_PLUGIN_PATH + ZSTD_FILE_NAME, FileMode.Create)) {
+                    s.CopyTo(f);
+                }
+            }
+
+            byte[] compressionDict;
+            using (Stream dictStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTD_DICT_RESOURCE_NAME)) {
+                compressionDict = new byte[dictStream.Length];
+                dictStream.Read(compressionDict, 0, (int)dictStream.Length);
+            }
             compressor = new Compressor(new CompressionOptions(compressionDict, 1));
             decompressor = new Decompressor(new DecompressionOptions(compressionDict));
+        }
+        public static void UninitCompressor() {
+            File.Delete(ZSTD_PLUGIN_PATH + ZSTD_FILE_NAME);
         }
 
         public static void InitConfig(ConfigFile config) {
