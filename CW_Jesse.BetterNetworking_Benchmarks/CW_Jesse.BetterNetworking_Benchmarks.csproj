@@ -6,18 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="libzstd.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="libzstd.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.4" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.5" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.6.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CW_Jesse.BetterNetworking.libzstd.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="dict.dict">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
