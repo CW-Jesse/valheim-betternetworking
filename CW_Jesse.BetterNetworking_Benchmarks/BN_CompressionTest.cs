@@ -71,20 +71,20 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         [Benchmark] public void CompressBN_New() => zstdCompressor.Wrap(bufferToCompress);
-        [Benchmark] public void CompressBN_NewPort() => zstdSharpCompressor.Wrap(bufferToCompress).ToArray();
-        [Benchmark] public void CompressBN_NewDict0() => zstdCompressorDict0.Wrap(bufferToCompress);
-        [Benchmark] public void CompressBN_NewDict1() => zstdCompressorDict1.Wrap(bufferToCompress);
-        [Benchmark] public void DecompressBN_New() => zstdDecompressor.Unwrap(zstdCompressedBuffer);
-        [Benchmark] public void DecompressBN_NewDict0() => zstdDecompressorDict0.Unwrap(zstdCompressedBufferDict0);
-        [Benchmark] public void DecompressBN_NewDict1() => zstdDecompressorDict1.Unwrap(zstdCompressedBufferDict1);
-        [Benchmark] public void TrainDictBN_New() => ZstdNet.DictBuilder.TrainFromBuffer(new[] { bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress });
-        [Benchmark]
-        public void CompressBN_NewStream() {
-            using (zstdCompressionStream = new ZstdNet.CompressionStream(new MemoryStream())) {
-                zstdCompressionStream.Write(bufferToCompress, 0, bufferToCompress.Length);
-            }
-        }
-        [Benchmark] public void CompressBN_Old() => LZ4Pickler.Pickle(bufferToCompress, levelLz4);
-        [Benchmark] public void CompressValheimVanilla() => ZlibStream.CompressBuffer(bufferToCompress, levelZlib); // horrible
+        //[Benchmark] public void CompressBN_NewPort() => zstdSharpCompressor.Wrap(bufferToCompress).ToArray();
+        //[Benchmark] public void CompressBN_NewDict0() => zstdCompressorDict0.Wrap(bufferToCompress);
+        //[Benchmark] public void CompressBN_NewDict1() => zstdCompressorDict1.Wrap(bufferToCompress);
+        //[Benchmark] public void DecompressBN_New() => zstdDecompressor.Unwrap(zstdCompressedBuffer);
+        //[Benchmark] public void DecompressBN_NewDict0() => zstdDecompressorDict0.Unwrap(zstdCompressedBufferDict0);
+        //[Benchmark] public void DecompressBN_NewDict1() => zstdDecompressorDict1.Unwrap(zstdCompressedBufferDict1);
+        //[Benchmark] public void TrainDictBN_New() => ZstdNet.DictBuilder.TrainFromBuffer(new[] { bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress });
+        //[Benchmark]
+        //public void CompressBN_NewStream() {
+        //    using (zstdCompressionStream = new ZstdNet.CompressionStream(new MemoryStream())) {
+        //        zstdCompressionStream.Write(bufferToCompress, 0, bufferToCompress.Length);
+        //    }
+        //}
+        //[Benchmark] public void CompressBN_Old() => LZ4Pickler.Pickle(bufferToCompress, levelLz4);
+        //[Benchmark] public void CompressValheimVanilla() => ZlibStream.CompressBuffer(bufferToCompress, levelZlib); // horrible
     }
 }

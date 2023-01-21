@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -20,11 +20,14 @@
       <HintPath>..\libs-Valheim\PlayFab.dll</HintPath>
     </Reference>
     <Reference Include="ZstdNet">
-      <HintPath>..\ZstdNet\ZstdNet.dll</HintPath>
+      <HintPath>..\..\ZstdNet\ZstdNet\bin\x64\Release\net480\ZstdNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="libzstd.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CW_Jesse.BetterNetworking.libzstd.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
