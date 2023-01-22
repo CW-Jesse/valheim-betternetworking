@@ -12,6 +12,8 @@ using BepInEx;
 using System.Reflection;
 using System.Linq;
 
+using K4os.Compression.LZ4;
+
 namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
@@ -21,9 +23,8 @@ namespace CW_Jesse.BetterNetworking {
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
 
-        public static Assembly zstdNet;
-        private static object compressor, decompressor;
-        private static MethodInfo wrap, unwrap;
+        private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
+        private static int ZSTD_LEVEL = 1;
 
         public enum Options_NetworkCompression {
             [Description("Enabled <b>[default]</b>")]
@@ -32,73 +33,25 @@ namespace CW_Jesse.BetterNetworking {
             @false
         }
 
-        private static string ZSTD_RESOURCE_NAME64 = "CW_Jesse.BetterNetworking.x64.cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_RESOURCE_NAME32 = "CW_Jesse.BetterNetworking.x86.cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_PLUGIN_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName;
-        private static string ZSTD_FILE_NAME = "cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_FILE_FULL_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName + Path.DirectorySeparatorChar + ZSTD_FILE_NAME;
-        //private static string ZSTD_PLUGIN_PATH = BepInEx.Paths.PluginPath + Path.DirectorySeparatorChar;
-        private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
-
         public static void InitCompressor() {
-            //BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
-            Directory.SetCurrentDirectory(ZSTD_PLUGIN_PATH); // allows ZstdNet to search the directory where the dll is
-
-            string zstdResourceName = Environment.Is64BitProcess ? ZSTD_RESOURCE_NAME64 : ZSTD_RESOURCE_NAME32;
-            using (Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(zstdResourceName)) {
-                using (FileStream f = new FileStream(ZSTD_FILE_FULL_PATH, FileMode.Create)) {
-                    s.CopyTo(f);
-                }
-            }
-
             byte[] compressionDict;
-            using (Stream dictStream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTD_DICT_RESOURCE_NAME)) {
+            using (Stream dictStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTD_DICT_RESOURCE_NAME)) {
                 compressionDict = new byte[dictStream.Length];
                 dictStream.Read(compressionDict, 0, (int)dictStream.Length);
             }
 
-            // this doesn't work:
-            // Type compressorOptionsType = zstdNet.GetType("CompressionOptions")
-            Type compressorOptionsType = zstdNet.GetTypes().First(t => t.Name == "CompressionOptions");
-            Type decompressorOptionsType = zstdNet.GetTypes().First(t => t.Name == "DecompressionOptions");
-            Type compressorType = zstdNet.GetTypes().First(t => t.Name == "Compressor");
-            Type decompressorType = zstdNet.GetTypes().First(t => t.Name == "Decompressor");
+            //compressor = new Compressor(ZSTD_LEVEL);
+            //compressor.LoadDictionary(compressionDict);
+            //decompressor = new Decompressor();
+            //decompressor.LoadDictionary(compressionDict);
 
-            object compressorOptions = Activator.CreateInstance(compressorOptionsType, new object[] { compressionDict, 1 });
-            object decompressorOptions = Activator.CreateInstance(decompressorOptionsType, new object[] { compressionDict });
-
-            compressor = Activator.CreateInstance(compressorType, new object[] { compressorOptions });
-            decompressor = Activator.CreateInstance(decompressorType, new object[] { decompressorOptions });
-            //compressor = new Compressor(new CompressionOptions(compressionDict, 1));
-            //decompressor = new Decompressor(new DecompressionOptions(compressionDict));
-
-            wrap = compressorType.GetMethod("Wrap", new Type[] { typeof(byte[]) });
-            unwrap = decompressorType.GetMethod("Unwrap", new Type[] { typeof(byte[]), typeof(int) });
-
-            AppDomain.CurrentDomain.ProcessExit += UninitCompressor;
-        }
-        private static void UninitCompressor(object sender, EventArgs e) {
-            //BN_Logger.LogError($"{Paths.BepInExAssemblyDirectory}, {Paths.BepInExAssemblyPath}, {Paths.BepInExConfigPath}, {Paths.BepInExRootPath}, {Paths.DllSearchPaths.Join()}, {Paths.GameRootPath}, {Paths.ExecutablePath}");
-            //wrap = null;
-            //unwrap = null;
-            //compressor = null;
-            //decompressor = null;
-            //zstdNet = null;
-            //GC.Collect();
-            //GC.WaitForPendingFinalizers();
-            Directory.SetCurrentDirectory(ZSTD_PLUGIN_PATH);
-            try {
-                File.Delete(ZSTD_FILE_NAME);
-            } catch (Exception ex) {
-                //BN_Logger.LogInfo($"Left behind file: {ZSTD_FILE_NAME} ({ex.GetType().Name})");
-            }
         }
 
         private static byte[] Compress(byte[] buffer) {
-            return (byte[])wrap.Invoke(compressor, new object[] { buffer } );
+            return LZ4Pickler.Pickle(buffer);
         }
         private static byte[] Decompress(byte[] compressedBuffer) {
-            return (byte[])unwrap.Invoke(decompressor, new object[] { compressedBuffer, int.MaxValue });
+            return LZ4Pickler.Unpickle(compressedBuffer);
         }
 
         public static void InitConfig(ConfigFile config) {

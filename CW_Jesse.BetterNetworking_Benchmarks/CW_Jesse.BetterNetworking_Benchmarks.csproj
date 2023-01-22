@@ -9,25 +9,17 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.4" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.5" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="ZstdSharp.Port" Version="0.6.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="K4os.Compression.LZ4">
-      <HintPath>..\packages\K4os.Compression.LZ4.1.2.13\lib\net5.0\K4os.Compression.LZ4.dll</HintPath>
-    </Reference>
     <Reference Include="PlayFab">
       <HintPath>..\libs-Valheim\PlayFab.dll</HintPath>
-    </Reference>
-    <Reference Include="ZstdNet">
-      <HintPath>..\..\ZstdNet\ZstdNet\bin\Release\net50\ZstdNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="cw_jesse.betternetworking.libzstd.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="dict.dict">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

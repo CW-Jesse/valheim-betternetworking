@@ -28,8 +28,6 @@ namespace CW_Jesse.BetterNetworking {
         void Awake() {
             BN_Logger.Init(base.Logger, Config);
 
-            LoadZstdNetAssembly();
-
             BN_Patch_Compression.InitCompressor();
 
             BN_Patch_ForceCrossplay.InitConfig(Config);
@@ -39,18 +37,6 @@ namespace CW_Jesse.BetterNetworking {
             BN_Patch_QueueSize.InitConfig(Config);
 
             harmony.PatchAll();
-        }
-
-        const string ZSTDNET_RESOURCE_NAME = "CW_Jesse.BetterNetworking.ZstdNet.dll";
-        void LoadZstdNetAssembly() {
-            using (Stream zstdNetAssemblyStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTDNET_RESOURCE_NAME)) {
-                byte[] zstdNetAssembly = new byte[zstdNetAssemblyStream.Length];
-                zstdNetAssemblyStream.Read(zstdNetAssembly, 0, zstdNetAssembly.Length);
-                //BN_Patch_Compression.zstdNetDomain = AppDomain.CreateDomain("ZstdNetDomain");
-                //BN_Patch_Compression.zstdNet = BN_Patch_Compression.zstdNetDomain.Load(zstdNetAssembly);
-                BN_Patch_Compression.zstdNet = Assembly.Load(zstdNetAssembly);
-                //BN_Patch_Compression.zstdNet = AppDomain.CurrentDomain.Load(zstdNetAssembly);
-            }
         }
 
 #if DEBUG
