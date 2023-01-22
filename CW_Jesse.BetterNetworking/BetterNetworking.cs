@@ -1,10 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
+using Steamworks;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -26,6 +28,8 @@ namespace CW_Jesse.BetterNetworking {
         void Awake() {
             BN_Logger.Init(base.Logger, Config);
 
+            //LoadZstdNetAssembly();
+
             BN_Patch_Compression.InitCompressor();
 
             BN_Patch_ForceCrossplay.InitConfig(Config);
@@ -36,6 +40,15 @@ namespace CW_Jesse.BetterNetworking {
 
             harmony.PatchAll();
         }
+
+        //const string ZSTDNET_RESOURCE_NAME = "CW_Jesse.BetterNetworking.ZstdNet.dll";
+        //void LoadZstdNetAssembly() {
+        //    using (Stream zstdNetAssemblyStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTDNET_RESOURCE_NAME)) {
+        //        byte[] zstdNetAssembly = new byte[zstdNetAssemblyStream.Length];
+        //        zstdNetAssemblyStream.Read(zstdNetAssembly, 0, zstdNetAssembly.Length);
+        //        Assembly zstdNet = Assembly.Load(zstdNetAssembly);
+        //    }
+        //}
 
 #if DEBUG
         void Start() {

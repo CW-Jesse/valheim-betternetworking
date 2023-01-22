@@ -20,7 +20,7 @@
       <HintPath>..\libs-Valheim\PlayFab.dll</HintPath>
     </Reference>
     <Reference Include="ZstdNet">
-      <HintPath>..\..\ZstdNet\ZstdNet\bin\Release\net480\ZstdNet.dll</HintPath>
+      <HintPath>..\..\ZstdNet\ZstdNet\bin\Release\net50\ZstdNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
