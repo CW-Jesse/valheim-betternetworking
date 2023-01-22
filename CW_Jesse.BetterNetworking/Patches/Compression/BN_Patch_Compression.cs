@@ -6,11 +6,11 @@ using System.IO;
 
 using HarmonyLib;
 using Steamworks;
-using ZstdNet;
 using BepInEx.Configuration;
 using PlayFab.Party;
 using BepInEx;
 using System.Reflection;
+using System.Linq;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -21,8 +21,9 @@ namespace CW_Jesse.BetterNetworking {
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
 
-        private static Compressor compressor;
-        private static Decompressor decompressor;
+        public static Assembly zstdNet;
+        private static object compressor, decompressor;
+        private static MethodInfo wrap, unwrap;
 
         public enum Options_NetworkCompression {
             [Description("Enabled <b>[default]</b>")]
@@ -39,6 +40,7 @@ namespace CW_Jesse.BetterNetworking {
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
 
         public static void InitCompressor() {
+
             //BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
 
             string zstdResourceName = Environment.Is64BitProcess ? ZSTD_RESOURCE_NAME64 : ZSTD_RESOURCE_NAME32;
@@ -53,11 +55,33 @@ namespace CW_Jesse.BetterNetworking {
                 compressionDict = new byte[dictStream.Length];
                 dictStream.Read(compressionDict, 0, (int)dictStream.Length);
             }
-            compressor = new Compressor(new CompressionOptions(compressionDict, 1));
-            decompressor = new Decompressor(new DecompressionOptions(compressionDict));
+
+            // this doesn't work:
+            // Type compressorOptionsType = zstdNet.GetType("CompressionOptions")
+            Type compressorOptionsType = zstdNet.GetTypes().First(t => t.Name == "CompressionOptions");
+            Type decompressorOptionsType = zstdNet.GetTypes().First(t => t.Name == "DecompressionOptions");
+            Type compressorType = zstdNet.GetTypes().First(t => t.Name == "Compressor");
+            Type decompressorType = zstdNet.GetTypes().First(t => t.Name == "Decompressor");
+
+            object compressorOptions = Activator.CreateInstance(compressorOptionsType, new object[] { compressionDict, 1 });
+            object decompressorOptions = Activator.CreateInstance(decompressorOptionsType, new object[] { compressionDict });
+
+            compressor = Activator.CreateInstance(compressorType, new object[] { compressorOptions });
+            decompressor = Activator.CreateInstance(decompressorType, new object[] { decompressorOptions });
+            //compressor = new Compressor(new CompressionOptions(compressionDict, 1));
+            //decompressor = new Decompressor(new DecompressionOptions(compressionDict));
+
+            wrap = compressorType.GetMethod("Wrap", new Type[] { typeof(byte[]) });
+            unwrap = decompressorType.GetMethod("Unwrap", new Type[] { typeof(byte[]), typeof(int) });
         }
         public static void UninitCompressor() {
             File.Delete(ZSTD_PLUGIN_PATH + ZSTD_FILE_NAME);
+        }
+        private static byte[] Compress(byte[] buffer) {
+            return (byte[])wrap.Invoke(compressor, new object[] { buffer } );
+        }
+        private static byte[] Decompress(byte[] compressedBuffer) {
+            return (byte[])unwrap.Invoke(decompressor, new object[] { compressedBuffer, int.MaxValue });
         }
 
         public static void InitConfig(ConfigFile config) {
@@ -128,9 +152,9 @@ namespace CW_Jesse.BetterNetworking {
 
             AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { payload.Length });
             if ((UnityEngine.Object)ZNet.instance != (UnityEngine.Object)null && ZNet.instance.HaveStopped)
-                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { compressor.Wrap(payload) });
+                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { Compress(payload) });
             else
-                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outCompress").GetValue(___m_zlibWorkQueue)).Enqueue(compressor.Wrap(payload));
+                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outCompress").GetValue(___m_zlibWorkQueue)).Enqueue(Compress(payload));
 
             return false;
         }
@@ -151,7 +175,7 @@ namespace CW_Jesse.BetterNetworking {
             if (!___m_isClient && ___m_didRecover)
                 AccessTools.Method(typeof(ZPlayFabSocket), "CheckReestablishConnection").Invoke(__instance, new object[] { compressedBuffer });
             else
-                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outDecompress").GetValue(___m_zlibWorkQueue)).Enqueue(decompressor.Unwrap(compressedBuffer));
+                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outDecompress").GetValue(___m_zlibWorkQueue)).Enqueue(Decompress(compressedBuffer));
 
             return false;
         }
@@ -160,7 +184,7 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPrefix]
         private static bool PlayFab_CheckReestablishConnection(ref ZPlayFabSocket __instance, byte[] maybeCompressedBuffer) {
             try {
-                AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { decompressor.Unwrap(maybeCompressedBuffer) });
+                AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { Decompress(maybeCompressedBuffer) });
             } catch {
                 return true;
             }
@@ -221,7 +245,7 @@ namespace CW_Jesse.BetterNetworking {
                             }
 
                             compressedPackagesWriter.Flush();
-                            compressedMessage = compressor.Wrap(compressedPackagesStream.ToArray());
+                            compressedMessage = Compress(compressedPackagesStream.ToArray());
                         }
                     }
 
@@ -322,7 +346,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 byte[] uncompressedPackages;
                 try {
-                    uncompressedPackages = decompressor.Unwrap(compressedPackages);
+                    uncompressedPackages = Decompress(compressedPackages);
                 } catch {
                     BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): Couldn't decompress message; assuming uncompressed");
 

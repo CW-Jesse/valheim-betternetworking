@@ -13,12 +13,14 @@
 
   <ItemGroup>
     <None Remove="dict\small" />
+    <None Remove="ZstdNet.dll" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="costura32\cw_jesse.betternetworking.libzstd.dll" />
     <EmbeddedResource Include="costura64\cw_jesse.betternetworking.libzstd.dll" />
     <EmbeddedResource Include="dict\small" />
+    <EmbeddedResource Include="ZstdNet.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -69,10 +71,6 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\libs-Valheim\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="ZstdNet">
-      <HintPath>..\..\ZstdNet\ZstdNet\bin\Release\netstandard2.0\ZstdNet.dll</HintPath>
-      <Private>True</Private>
     </Reference>
   </ItemGroup>
 

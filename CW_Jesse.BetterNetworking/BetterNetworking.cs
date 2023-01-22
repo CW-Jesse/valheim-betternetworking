@@ -28,7 +28,7 @@ namespace CW_Jesse.BetterNetworking {
         void Awake() {
             BN_Logger.Init(base.Logger, Config);
 
-            //LoadZstdNetAssembly();
+            LoadZstdNetAssembly();
 
             BN_Patch_Compression.InitCompressor();
 
@@ -41,14 +41,15 @@ namespace CW_Jesse.BetterNetworking {
             harmony.PatchAll();
         }
 
-        //const string ZSTDNET_RESOURCE_NAME = "CW_Jesse.BetterNetworking.ZstdNet.dll";
-        //void LoadZstdNetAssembly() {
-        //    using (Stream zstdNetAssemblyStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTDNET_RESOURCE_NAME)) {
-        //        byte[] zstdNetAssembly = new byte[zstdNetAssemblyStream.Length];
-        //        zstdNetAssemblyStream.Read(zstdNetAssembly, 0, zstdNetAssembly.Length);
-        //        Assembly zstdNet = Assembly.Load(zstdNetAssembly);
-        //    }
-        //}
+        const string ZSTDNET_RESOURCE_NAME = "CW_Jesse.BetterNetworking.ZstdNet.dll";
+        void LoadZstdNetAssembly() {
+            using (Stream zstdNetAssemblyStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZSTDNET_RESOURCE_NAME)) {
+                byte[] zstdNetAssembly = new byte[zstdNetAssemblyStream.Length];
+                zstdNetAssemblyStream.Read(zstdNetAssembly, 0, zstdNetAssembly.Length);
+                BN_Patch_Compression.zstdNet = Assembly.Load(zstdNetAssembly);
+                BN_Patch_Compression.zstdNet = AppDomain.CurrentDomain.Load(zstdNetAssembly);
+            }
+        }
 
 #if DEBUG
         void Start() {
