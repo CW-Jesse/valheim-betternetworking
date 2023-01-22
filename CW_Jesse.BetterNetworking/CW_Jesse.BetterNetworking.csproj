@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="costura32\cw_jesse.betternetworking.libzstd.dll" />
-    <EmbeddedResource Include="costura64\cw_jesse.betternetworking.libzstd.dll" />
+    <EmbeddedResource Include="x86\cw_jesse.betternetworking.libzstd.dll" />
+    <EmbeddedResource Include="x64\cw_jesse.betternetworking.libzstd.dll" />
     <EmbeddedResource Include="dict\small" />
     <EmbeddedResource Include="ZstdNet.dll" />
   </ItemGroup>

@@ -32,20 +32,21 @@ namespace CW_Jesse.BetterNetworking {
             @false
         }
 
-        private static string ZSTD_RESOURCE_NAME64 = "costura64.cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_RESOURCE_NAME32 = "costura32.cw_jesse.betternetworking.libzstd.dll";
+        private static string ZSTD_RESOURCE_NAME64 = "CW_Jesse.BetterNetworking.x64.cw_jesse.betternetworking.libzstd.dll";
+        private static string ZSTD_RESOURCE_NAME32 = "CW_Jesse.BetterNetworking.x86.cw_jesse.betternetworking.libzstd.dll";
+        private static string ZSTD_PLUGIN_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName;
         private static string ZSTD_FILE_NAME = "cw_jesse.betternetworking.libzstd.dll";
-        private static string ZSTD_PLUGIN_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName + Path.DirectorySeparatorChar;
+        private static string ZSTD_FILE_FULL_PATH = Directory.GetParent(System.Reflection.Assembly.GetExecutingAssembly().Location).FullName + Path.DirectorySeparatorChar + ZSTD_FILE_NAME;
         //private static string ZSTD_PLUGIN_PATH = BepInEx.Paths.PluginPath + Path.DirectorySeparatorChar;
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
 
         public static void InitCompressor() {
-
             //BN_Logger.LogError($"Resources: {Assembly.GetExecutingAssembly().GetManifestResourceNames().Join()}");
+            Directory.SetCurrentDirectory(ZSTD_PLUGIN_PATH); // allows ZstdNet to search the directory where the dll is
 
             string zstdResourceName = Environment.Is64BitProcess ? ZSTD_RESOURCE_NAME64 : ZSTD_RESOURCE_NAME32;
             using (Stream s = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(zstdResourceName)) {
-                using (FileStream f = new FileStream(ZSTD_PLUGIN_PATH + ZSTD_FILE_NAME, FileMode.Create)) {
+                using (FileStream f = new FileStream(ZSTD_FILE_FULL_PATH, FileMode.Create)) {
                     s.CopyTo(f);
                 }
             }
@@ -73,10 +74,26 @@ namespace CW_Jesse.BetterNetworking {
 
             wrap = compressorType.GetMethod("Wrap", new Type[] { typeof(byte[]) });
             unwrap = decompressorType.GetMethod("Unwrap", new Type[] { typeof(byte[]), typeof(int) });
+
+            AppDomain.CurrentDomain.ProcessExit += UninitCompressor;
         }
-        public static void UninitCompressor() {
-            File.Delete(ZSTD_PLUGIN_PATH + ZSTD_FILE_NAME);
+        private static void UninitCompressor(object sender, EventArgs e) {
+            //BN_Logger.LogError($"{Paths.BepInExAssemblyDirectory}, {Paths.BepInExAssemblyPath}, {Paths.BepInExConfigPath}, {Paths.BepInExRootPath}, {Paths.DllSearchPaths.Join()}, {Paths.GameRootPath}, {Paths.ExecutablePath}");
+            //wrap = null;
+            //unwrap = null;
+            //compressor = null;
+            //decompressor = null;
+            //zstdNet = null;
+            //GC.Collect();
+            //GC.WaitForPendingFinalizers();
+            Directory.SetCurrentDirectory(ZSTD_PLUGIN_PATH);
+            try {
+                File.Delete(ZSTD_FILE_NAME);
+            } catch (Exception ex) {
+                //BN_Logger.LogInfo($"Left behind file: {ZSTD_FILE_NAME} ({ex.GetType().Name})");
+            }
         }
+
         private static byte[] Compress(byte[] buffer) {
             return (byte[])wrap.Invoke(compressor, new object[] { buffer } );
         }
