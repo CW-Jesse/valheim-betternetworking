@@ -51,10 +51,20 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         private static byte[] Compress(byte[] buffer) {
-            return compressor.Wrap(buffer).ToArray();
+            byte[] compressedBuffer = compressor.Wrap(buffer).ToArray();
+            if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info && buffer.Length > 256) { // small messages don't compress well but they also don't matter
+                float compressedSizePercentage = ((float)compressedBuffer.Length / (float)buffer.Length) * 100;
+                BN_Logger.LogInfo($"Sent {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
+            }
+            return compressedBuffer;
         }
         private static byte[] Decompress(byte[] compressedBuffer) {
-            return decompressor.Unwrap(compressedBuffer).ToArray();
+            byte[] buffer = decompressor.Unwrap(compressedBuffer).ToArray();
+            if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info && buffer.Length > 256) { // small messages don't compress well but they also don't matter
+                float compressedSizePercentage = ((float)compressedBuffer.Length / (float)buffer.Length) * 100;
+                BN_Logger.LogInfo($"Received {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
+            }
+            return buffer;
         }
 
         public static void InitConfig(ConfigFile config) {
@@ -254,15 +264,6 @@ namespace CW_Jesse.BetterNetworking {
                     for (int i = 0; i < packagesToSendArray.Length; i++) {
                         ___m_sendQueue.Dequeue();
                     }
-
-                    // log result
-
-                    if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
-                        if (packagesToSendLength > 256) { // small messages don't compress well but they also don't matter
-                            float compressedSizePercentage = ((float)compressedMessage.Length / (float)packagesToSendLength) * 100;
-                            BN_Logger.LogInfo($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {packagesToSendLength} B compressed to {compressedSizePercentage.ToString("0")}%");
-                        }
-                    }
                 }
             }
 
@@ -328,13 +329,6 @@ namespace CW_Jesse.BetterNetworking {
                     ___m_gotData = true;
                     __result = zpackage;
                     return false;
-                }
-
-                if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info) {
-                    if (uncompressedPackages.Length > 256) { // small messages don't compress well but they also don't matter
-                        float compressedSizePercentage = ((float)steamNetworkingMessage_t.m_cbSize / (float)uncompressedPackages.Length) * 100;
-                        BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): {uncompressedPackages.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
-                    }
                 }
 
                 using (MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages)) {
