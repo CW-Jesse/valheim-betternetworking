@@ -62,9 +62,9 @@ namespace CW_Jesse.BetterNetworking {
                 "Networking",
                 "Compression Enabled",
                 Options_NetworkCompression.@true,
-                new ConfigDescription("Most people will want to keep this enabled.\n" +
+                new ConfigDescription("Keep this enabled unless comparing difference.\n" +
                 "---\n" +
-                "PlayFab/Steamworks: Increases speed and strength of network compression.\nSteamworks: Adds network compression."));
+                "Crossplay enabled: Increases speed and strength of network compression.\nCrossplay disabled: Adds network compression."));
 
             BetterNetworking.configCompressionEnabled.SettingChanged += ConfigCompressionEnabled_SettingChanged;
         }
