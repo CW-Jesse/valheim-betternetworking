@@ -12,19 +12,21 @@ using BepInEx;
 using System.Reflection;
 using System.Linq;
 
-using K4os.Compression.LZ4;
+using ZstdSharp;
 
 namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public partial class BN_Patch_Compression {
-        private const int COMPRESSION_VERSION = 4;
+        private const int COMPRESSION_VERSION = 5;
 
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
 
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
         private static int ZSTD_LEVEL = 1;
+        private static Compressor compressor;
+        private static Decompressor decompressor;
 
         public enum Options_NetworkCompression {
             [Description("Enabled <b>[default]</b>")]
@@ -40,18 +42,19 @@ namespace CW_Jesse.BetterNetworking {
                 dictStream.Read(compressionDict, 0, (int)dictStream.Length);
             }
 
-            //compressor = new Compressor(ZSTD_LEVEL);
-            //compressor.LoadDictionary(compressionDict);
-            //decompressor = new Decompressor();
-            //decompressor.LoadDictionary(compressionDict);
+            System.Threading.Thread.Sleep(3000);
+            compressor = new Compressor(ZSTD_LEVEL);
+            compressor.LoadDictionary(compressionDict);
+            decompressor = new Decompressor();
+            decompressor.LoadDictionary(compressionDict);
 
         }
 
         private static byte[] Compress(byte[] buffer) {
-            return LZ4Pickler.Pickle(buffer);
+            return compressor.Wrap(buffer).ToArray();
         }
         private static byte[] Decompress(byte[] compressedBuffer) {
-            return LZ4Pickler.Unpickle(compressedBuffer);
+            return decompressor.Unwrap(compressedBuffer).ToArray();
         }
 
         public static void InitConfig(ConfigFile config) {

@@ -10,7 +10,7 @@ using Steamworks;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "2.0.3")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "2.0.4")]
     [BepInIncompatibility("Steel.ValheimMod")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]
     public class BetterNetworking : BaseUnityPlugin {

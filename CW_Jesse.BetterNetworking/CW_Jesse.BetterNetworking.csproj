@@ -6,7 +6,7 @@
     <Copyright>CW_Jesse 2023</Copyright>
     <Company>CW_Jesse</Company>
     <RepositoryUrl>https://www.nexusmods.com/valheim/mods/1570</RepositoryUrl>
-    <Version>2.0.3</Version>
+    <Version>2.0.4</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
   </PropertyGroup>
@@ -18,12 +18,19 @@
 
   <ItemGroup>
     <EmbeddedResource Include="dict\small" />
-    <EmbeddedResource Include="ZstdNet.dll" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="K4os.Compression.LZ4" Version="1.3.5" />
+    <PackageReference Include="Costura.Fody" Version="5.7.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets></IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Fody" Version="6.6.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets></IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.6.4" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,9 +69,6 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\libs-Valheim\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="ZstdSharp">
-      <HintPath>..\..\ZstdSharp\src\ZstdSharp\bin\Release\netstandard2.0\ZstdSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 
