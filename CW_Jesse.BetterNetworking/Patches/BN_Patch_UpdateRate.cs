@@ -7,11 +7,11 @@ namespace CW_Jesse.BetterNetworking {
 
     public class BN_Patch_UpdateRate {
         public enum Options_NetworkUpdateRates {
-            [Description("100% (20 updates/second) <b>[default]</b>")]
+            [Description("100% <b>[default]</b>")]
             _100,
-            [Description("75% (15 updates/second)")]
+            [Description("75%")]
             _75,
-            [Description("50% (10 updates/second)")]
+            [Description("50%")]
             _50
         }
 
@@ -21,7 +21,10 @@ namespace CW_Jesse.BetterNetworking {
                 "Update Rate",
                 Options_NetworkUpdateRates._100,
                 new ConfigDescription(
-                    "PlayFab/Steamworks: Allows you to reduce how often your computer sends updates. Can reduce network stress."
+                    "Reducing this can help if your upload speed is low.\n" +
+                    "100%: 20 updates/second\n" +
+                    "75%: 15 updates/second\n" +
+                    "50%: 10 updates/second"
                 ));
         }
 
