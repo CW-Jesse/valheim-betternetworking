@@ -23,12 +23,14 @@ namespace CW_Jesse.BetterNetworking {
             _200,
             [Description("150% (225 KB/s | 1.8 Mbit/s)")]
             _150,
-            [Description("100% (150 KB/s | 1.2 Mbit/s)")]
+            [Description("100% (150 KB/s | 1.2 Mbit/s) [Valheim default]")]
             _100,
             [Description("50% (75 KB/s | 0.6 Mbit/s)")]
             _50
         }
         public enum Options_NetworkSendRateMin {
+            [Description("No limit")]
+            _INF,
             [Description("400% (600 KB/s | 4.8 Mbit/s)")]
             _400,
             [Description("300% (450 KB/s | 3.6 Mbit/s) <b>[default]</b>")]
@@ -37,7 +39,7 @@ namespace CW_Jesse.BetterNetworking {
             _200,
             [Description("150% (225 KB/s | 1.8 Mbit/s)")]
             _150,
-            [Description("100% (150 KB/s | 1.2 Mbit/s)")]
+            [Description("100% (150 KB/s | 1.2 Mbit/s) [Valheim default]")]
             _100,
             [Description("50% (75 KB/s | 0.6 Mbit/s)")]
             _50
@@ -50,16 +52,18 @@ namespace CW_Jesse.BetterNetworking {
                 "Minimum Send Rate",
                 Options_NetworkSendRateMin._300,
                 new ConfigDescription(
-                    "Steamworks: The minimum speed Steam can <i>attempt</i> to send data.\n" +
-                    "<b>Lower this below your internet upload speed.</b>"
+                    "Steamworks: The minimum speed Steam will <i>attempt</i> to send data.\n" +
+                    "<b>Lower this below your internet upload speed.</b>\n" +
+                    "100% = (150 KB/s | 1.2 Mbit/s)"
                 ));
             BetterNetworking.configNetworkSendRateMax = config.Bind(
                 "Networking (Steamworks)",
                 "Maximum Send Rate",
                 Options_NetworkSendRateMax._INF,
                 new ConfigDescription(
-                    "Steamworks: The maximum speed Steam can <i>attempt</i> to send data.\n" +
-                    "If you have a low upload speed, lower this <i>below</i> your internet upload speed."
+                    "Steamworks: The maximum speed Steam will <i>attempt</i> to send data.\n" +
+                    "If you have a low upload speed, lower this <i>below</i> your internet upload speed.\n" +
+                    "100% = (150 KB/s | 1.2 Mbit/s)"
                 ));
 
             ConfigNetworkSendRateSettings_Listen();
@@ -96,6 +100,8 @@ namespace CW_Jesse.BetterNetworking {
             public static int SendRateMin {
                 get {
                     switch (BetterNetworking.configNetworkSendRateMin.Value) {
+                        case Options_NetworkSendRateMin._INF:
+                            return 0;
                         case Options_NetworkSendRateMin._400:
                             return originalNetworkSendRateMin * 4;
                         case Options_NetworkSendRateMin._300:
