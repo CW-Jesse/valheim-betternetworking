@@ -11,8 +11,10 @@ using Steamworks;
 namespace CW_Jesse.BetterNetworking {
 
     [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "2.0.4")]
-    [BepInIncompatibility("Steel.ValheimMod")]
+    [BepInIncompatibility("org.bepinex.plugins.network")]
+    [BepInIncompatibility("be.sebastienvercammen.valheim.netcompression")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]
+    [BepInIncompatibility("Steel.ValheimMod")]
     public class BetterNetworking : BaseUnityPlugin {
 
         private readonly Harmony harmony = new Harmony("CW_Jesse.BetterNetworking");
