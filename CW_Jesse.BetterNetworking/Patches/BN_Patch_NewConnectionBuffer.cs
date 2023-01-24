@@ -23,10 +23,14 @@ namespace CW_Jesse.BetterNetworking.Patches {
         [HarmonyPatch(typeof(ZDOMan), nameof(ZDOMan.AddPeer))]
         private class SendBufferOnAddPeer {
             private static void Postfix(ZDOMan __instance, ZNetPeer netPeer) {
-                foreach (ZPackage package in packageBuffer) {
-                    AccessTools.Method(typeof(ZDOMan), "RPC_ZDOData").Invoke(__instance, new object[] { netPeer.m_rpc, package });
+                if (packageBuffer.Count > 0) {
+                    BN_Logger.LogMessage($"Sending {packageBuffer.Count} buffered packages");
+
+                    foreach (ZPackage package in packageBuffer) {
+                        AccessTools.Method(typeof(ZDOMan), "RPC_ZDOData").Invoke(__instance, new object[] { netPeer.m_rpc, package });
+                    }
+                    packageBuffer.Clear();
                 }
-                packageBuffer.Clear();
             }
         }
 
