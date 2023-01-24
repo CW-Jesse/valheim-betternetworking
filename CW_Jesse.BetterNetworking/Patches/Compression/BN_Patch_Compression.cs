@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Linq;
 
 using ZstdSharp;
+using System.Runtime.CompilerServices;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -175,181 +176,23 @@ namespace CW_Jesse.BetterNetworking {
 
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
-        private static bool Steamworks_SendCompressedPackages(ref ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue, ref int ___m_totalSent, ref HSteamNetConnection ___m_con) {
-            if (!__instance.IsConnected()) {
-                return false;
-            }
-
+        private static bool Steamworks_SendCompressedPackages(ref ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue) {
+            if (!__instance.IsConnected()) { return false; }
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetSendCompressionStarted(peer)) {
-#if DEBUG
-                BN_Logger.LogInfo($"Compressed Send: Sending uncompressed message to {BN_Utils.GetPeerName(peer)}");
-#endif
-                return true;
-            }
-#if DEBUG
-            BN_Logger.LogInfo($"Compressed Send: Sending compressed message to {BN_Utils.GetPeerName(peer)}");
-#endif
+            if (!CompressionStatus.GetSendCompressionStarted(peer)) { return true; }
 
-            lock (___m_sendQueue) {
-
-                while (___m_sendQueue.Count > 0) {
-
-                    int packagesToSendLength = 0;
-
-                    // determine how many packages to send in a single message
-
-                    List<byte[]> packagesToSendList = new List<byte[]>();
-                    foreach (byte[] package in ___m_sendQueue) {
-                        if (packagesToSendList.Count > 0 && // send at least one package
-                            packagesToSendLength + package.Length > k_cbMaxSteamNetworkingSocketsMessageSizeSend) { // packages must not exceed steam message send size limit uncompressed (assumes successful compression)
-                            BN_Logger.LogMessage($"Compressed Send ({BN_Utils.GetPeerName(peer)}): Reached send limit: {packagesToSendList.Count} packages size: {packagesToSendLength}/{k_cbMaxSteamNetworkingSocketsMessageSizeSend}; sending {___m_sendQueue.Count - packagesToSendList.Count} queued packages in another message");
-                            break;
-                        }
-
-                        packagesToSendLength += package.Length;
-                        packagesToSendList.Add(package);
-                    }
-
-                    // compress message
-
-                    byte[][] packagesToSendArray = packagesToSendList.ToArray();
-                    byte[] compressedMessage;
-
-                    using (MemoryStream compressedPackagesStream = new MemoryStream()) {
-                        using (BinaryWriter compressedPackagesWriter = new BinaryWriter(compressedPackagesStream)) {
-
-                            compressedPackagesWriter.Write(packagesToSendArray.Length); // number of packages
-
-                            for (int i = 0; i < packagesToSendArray.Length; i++) {
-                                compressedPackagesWriter.Write(packagesToSendArray[i].Length); // length of package
-                                compressedPackagesWriter.Write(packagesToSendArray[i]); // package
-                            }
-
-                            compressedPackagesWriter.Flush();
-                            compressedMessage = Compress(compressedPackagesStream.ToArray());
-                        }
-                    }
-
-#if DEBUG
-                    BN_Logger.LogInfo($"Compressed Send {BN_Utils.GetPeerName(peer)}: Message reduced from {packagesToSendLength} B to {compressedMessage.Length} B");
-#endif
-
-                    // send message
-
-                    IntPtr intPtr = Marshal.AllocHGlobal(compressedMessage.Length);
-                    Marshal.Copy(compressedMessage, 0, intPtr, compressedMessage.Length);
-
-                    EResult eresult;
-                    long messagesSentCount;
-                    if (BN_Utils.IsDedicated()) {
-                        eresult = SteamGameServerNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
-                    } else {
-                        eresult = SteamNetworkingSockets.SendMessageToConnection(___m_con, intPtr, (uint)compressedMessage.Length, k_nSteamNetworkingSend_Reliable, out messagesSentCount);
-                    }
-
-                    Marshal.FreeHGlobal(intPtr);
-
-                    // ensure message was sent
-
-                    if (eresult != EResult.k_EResultOK) {
-                        BN_Logger.LogWarning($"Compressed Send ({BN_Utils.GetPeerName(peer)}): {eresult};");
-                        return true;
-                    }
-
-                    // remove sent messages from queue
-
-                    ___m_totalSent += compressedMessage.Length;
-                    for (int i = 0; i < packagesToSendArray.Length; i++) {
-                        ___m_sendQueue.Dequeue();
-                    }
-                }
-            }
-
-            return false;
+            ___m_sendQueue = new Queue<byte[]>(___m_sendQueue.Select(p => Compress(p)));
+            return true;
          }
 
-        private readonly static Queue<ZPackage> packages = new Queue<ZPackage>();
-
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
-        [HarmonyPrefix]
-        private static bool ReceiveCompressedPackages(ref ZPackage __result, ref ZSteamSocket __instance, ref HSteamNetConnection ___m_con, ref int ___m_totalRecv, ref bool ___m_gotData) {
-            if (packages.Count > 0) {
-                BN_Logger.LogInfo("Compressed Receive: Dequeueing previously received package");
-                ZPackage package = packages.Dequeue();
-                ___m_totalRecv += package.Size();
-                ___m_gotData = true;
-
-                __result = package;
-                return false;
-            }
-            
-            if (!__instance.IsConnected()) {
-                __result = null;
-                return false;
-            }
-
+        [HarmonyPostfix]
+        private static void Steamworks_ReceiveCompressedPackages(ref ZPackage __result, ref ZSteamSocket __instance) {
+            if (!__instance.IsConnected()) { return; }
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-#if DEBUG
-                BN_Logger.LogInfo($"Compressed Receive: Receiving uncompressed message from {BN_Utils.GetPeerName(peer)}");
-#endif
-                return true;
-            }
-#if DEBUG
-            BN_Logger.LogInfo($"Compressed Receive: Receiving compressed message from {BN_Utils.GetPeerName(peer)}");
-#endif
+            if (!CompressionStatus.GetReceiveCompressionStarted(peer)) { return; }
 
-            IntPtr[] array = new IntPtr[1];
-            bool receivedMessages = false;
-            if (BN_Utils.IsDedicated()) {
-                receivedMessages = SteamGameServerNetworkingSockets.ReceiveMessagesOnConnection(___m_con, array, 1) == 1;
-            } else {
-                receivedMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(___m_con, array, 1) == 1;
-            }
-
-            if (receivedMessages) {
-                SteamNetworkingMessage_t steamNetworkingMessage_t = Marshal.PtrToStructure<SteamNetworkingMessage_t>(array[0]);
-
-
-                byte[] compressedPackages = new byte[steamNetworkingMessage_t.m_cbSize];
-                Marshal.Copy(steamNetworkingMessage_t.m_pData, compressedPackages, 0, steamNetworkingMessage_t.m_cbSize);
-                steamNetworkingMessage_t.m_pfnRelease = array[0];
-                steamNetworkingMessage_t.Release();
-
-                byte[] uncompressedPackages;
-                try {
-                    uncompressedPackages = Decompress(compressedPackages);
-                } catch {
-                    BN_Logger.LogInfo($"Compressed Receive ({BN_Utils.GetPeerName(peer)}): Couldn't decompress message; assuming uncompressed");
-
-                    ZPackage zpackage = new ZPackage(compressedPackages);
-                    ___m_totalRecv += zpackage.Size();
-                    ___m_gotData = true;
-                    __result = zpackage;
-                    return false;
-                }
-
-                using (MemoryStream uncompressedPackagesStream = new MemoryStream(uncompressedPackages)) {
-                    using (BinaryReader uncompressedPackagesReader = new BinaryReader(uncompressedPackagesStream)) {
-                        int packageCount = uncompressedPackagesReader.ReadInt32();
-                        for (int i = 0; i < packageCount; i++) {
-                            int packageLength = uncompressedPackagesReader.ReadInt32();
-                            byte[] packageByteArray = uncompressedPackagesReader.ReadBytes(packageLength);
-                            packages.Enqueue(new ZPackage(packageByteArray));
-                        }
-                    }
-                }
-
-                ZPackage package = packages.Dequeue();
-                ___m_totalRecv += package.Size();
-                ___m_gotData = true;
-
-                __result = package;
-                return false;
-            }
-            __result = null;
-            return false;
+            if (__result != null) { __result = new ZPackage(Decompress(__result.GetArray())); }
         }
 
 
