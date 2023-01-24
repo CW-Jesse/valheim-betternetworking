@@ -29,27 +29,32 @@ namespace CW_Jesse.BetterNetworking {
             }
 
             if (CompressionStatus.GetIsCompatibleWith(peer)) {
-                SendCompressionEnabledStatus(peer, CompressionStatus.ourStatus.compressionEnabled);
+                SendCompressionEnabledStatus(peer);
             }
         }
 
-        public static void SendCompressionEnabledStatus(bool compressionEnabled) {
+        public static void SendCompressionEnabledStatus() {
             foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
                 if (CompressionStatus.GetIsCompatibleWith(peer)) {
-                    SendCompressionEnabledStatus(peer, compressionEnabled);
+                    SendCompressionEnabledStatus(peer);
                 }
             }
         }
-        private static void SendCompressionEnabledStatus(ZNetPeer peer, bool compressionEnabled) {
+        private static void SendCompressionEnabledStatus(ZNetPeer peer) {
             if (ZNet.instance == null) { return; }
-            peer.m_rpc.Invoke(RPC_COMPRESSION_ENABLED, new object[] { compressionEnabled });
+            peer.m_rpc.Invoke(RPC_COMPRESSION_ENABLED, new object[] { CompressionStatus.ourStatus.compressionEnabled });
+            if (CompressionStatus.ourStatus.compressionEnabled && CompressionStatus.GetCompressionEnabled(peer)) {
+                SendCompressionStarted(peer, true);
+            } else {
+                SendCompressionStarted(peer, false); // don't start compression if either peer has it disabled
+            }
         }
 
-        private static void RPC_CompressionEnabled(ZRpc rpc, bool enabled) {
+        private static void RPC_CompressionEnabled(ZRpc rpc, bool peerCompressionEnabled) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            CompressionStatus.SetCompressionEnabled(peer, enabled);
-            if (CompressionStatus.ourStatus.compressionEnabled && CompressionStatus.GetCompressionEnabled(peer)) {
-                SendCompressionStarted(peer, enabled);
+            CompressionStatus.SetCompressionEnabled(peer, peerCompressionEnabled);
+            if (CompressionStatus.ourStatus.compressionEnabled && peerCompressionEnabled) {
+                SendCompressionStarted(peer, true);
             } else {
                 SendCompressionStarted(peer, false); // don't start compression if either peer has it disabled
             }
@@ -57,14 +62,15 @@ namespace CW_Jesse.BetterNetworking {
 
         private static void SendCompressionStarted(ZNetPeer peer, bool started) {
             if (ZNet.instance == null) { return; }
+            if (CompressionStatus.GetSendCompressionStarted(peer) == started) { return; } // don't do anything if nothing's changed
             peer.m_rpc.Invoke(RPC_COMPRESSION_STARTED, new object[] { started });
             CompressionStatus.SetSendCompressionStarted(peer, started);
             BN_Logger.LogMessage($"Compression to {BN_Utils.GetPeerName(peer)}: {started}");
         }
-        private static void RPC_CompressionStarted(ZRpc rpc, bool started) {
+        private static void RPC_CompressionStarted(ZRpc rpc, bool peerCompressionStarted) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
-            CompressionStatus.SetReceiveCompressionStarted(peer, started);
-            BN_Logger.LogMessage($"Compression from {BN_Utils.GetPeerName(peer)}: {started}");
+            CompressionStatus.SetReceiveCompressionStarted(peer, peerCompressionStarted);
+            BN_Logger.LogMessage($"Compression from {BN_Utils.GetPeerName(peer)}: {peerCompressionStarted}");
         }
     }
 }

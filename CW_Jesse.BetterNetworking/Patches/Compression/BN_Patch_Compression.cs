@@ -93,9 +93,8 @@ namespace CW_Jesse.BetterNetworking {
                 BN_Logger.LogMessage($"Compression: Disabling");
             }
 
-            SendCompressionEnabledStatus(newCompressionStatus);
-
             CompressionStatus.ourStatus.compressionEnabled = newCompressionStatus;
+            SendCompressionEnabledStatus();
         }
 
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
