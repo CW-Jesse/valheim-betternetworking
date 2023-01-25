@@ -19,10 +19,11 @@ namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public partial class BN_Patch_Compression {
-        private const int COMPRESSION_VERSION = 5;
+        private const int COMPRESSION_VERSION = 6;
 
         private const int k_nSteamNetworkingSend_Reliable = 8;                       // https://partner.steamgames.com/doc/api/steamnetworkingtypes
         private const int k_cbMaxSteamNetworkingSocketsMessageSizeSend = 512 * 1024; // https://partner.steamgames.com/doc/api/steamnetworkingtypes
+        private const int chunkSize = k_cbMaxSteamNetworkingSocketsMessageSizeSend - 1; // leaves 1 byte for chunk count
 
         private static string ZSTD_DICT_RESOURCE_NAME = "CW_Jesse.BetterNetworking.dict.small";
         private static int ZSTD_LEVEL = 1;
@@ -181,18 +182,104 @@ namespace CW_Jesse.BetterNetworking {
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
             if (!CompressionStatus.GetSendCompressionStarted(peer)) { return true; }
 
-            ___m_sendQueue = new Queue<byte[]>(___m_sendQueue.Select(p => Compress(p)));
+            if (BN_Utils.IsDedicated()) {
+                byte[] randomPackage = new byte[1024 * 1024];
+                new Random(0).NextBytes(randomPackage);
+                ___m_sendQueue.Enqueue(randomPackage);
+            }
+
+            if (___m_sendQueue.Count <= 0) { return false; }
+
+            int originalQueueLength = ___m_sendQueue.Count;
+
+            ___m_sendQueue = new Queue<byte[]>(___m_sendQueue.SelectMany(p => {
+                p = Compress(p);
+                int chunkCount = GetChunkCount(p);
+                if (chunkCount > 1) {
+                    BN_Logger.LogMessage($"message {p.Length} is being chunked into {chunkCount} chunks");
+                }
+                Queue<byte[]> chunks = new Queue<byte[]>();
+
+                chunks.Enqueue(new byte[1] { (byte)chunkCount }.AddRangeToArray(GetChunk(p, 0)));
+
+                for (int i = 1; i < chunkCount; i++) {
+                    chunks.Enqueue(GetChunk(p, i));
+                }
+
+                return chunks;
+            }
+            ));
+            if (___m_sendQueue.Count > originalQueueLength) {
+                BN_Logger.LogMessage($"queue length chunked from {originalQueueLength} to {___m_sendQueue.Count}");
+            }
+
+
             return true;
          }
+        private static int GetChunkCount(byte[] data) {
+            int chunkCount = (data.Length / chunkSize) + 1;
+            //BN_Logger.LogMessage($"chunk count: {chunkCount}");
+            return chunkCount;
+        }
+        private static byte[] GetChunk(byte[] data, int chunkNumber) {
+            int chunkStart = chunkNumber * chunkSize;
 
+            byte[] chunk = data.Skip(chunkStart).Take(chunkSize).ToArray();
+
+            if (chunkNumber > 0) {
+                BN_Logger.LogMessage($"chunk {chunkNumber}: {chunk.Length}/{data.Length}");
+            }
+            return chunk;
+        }
+
+        private static int packageChunksRemaining = 0;
+        private static byte[] chunkedPackage = new byte[0];
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
         [HarmonyPostfix]
         private static void Steamworks_ReceiveCompressedPackages(ref ZPackage __result, ref ZSteamSocket __instance) {
             if (!__instance.IsConnected()) { return; }
+            if (__result == null) { return; }
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
             if (!CompressionStatus.GetReceiveCompressionStarted(peer)) { return; }
 
-            if (__result != null) { __result = new ZPackage(Decompress(__result.GetArray())); }
+            byte[] p = __result.GetArray(); // get the received package
+            BN_Logger.LogMessage($"received message of size {p.Length} B");
+            // if it's part 2 or more, add it to the range and return nothing
+            if (packageChunksRemaining > 1) {
+                BN_Logger.LogMessage($"received chunk {packageChunksRemaining} of");
+
+
+                packageChunksRemaining--;
+                chunkedPackage = chunkedPackage.AddRangeToArray(p);
+
+                __result = null;
+                return;
+            }
+
+            if (packageChunksRemaining <= 0) {
+                packageChunksRemaining = p[0];
+                p = p.Skip(1).ToArray();
+                BN_Logger.LogMessage($"received message of {packageChunksRemaining} chunks, {p.Length} B");
+
+                if (packageChunksRemaining > 1) {
+                    packageChunksRemaining--;
+                    chunkedPackage = chunkedPackage.AddRangeToArray(p);
+                    __result = null;
+                    return;
+                }
+            }
+
+            packageChunksRemaining--;
+            chunkedPackage = chunkedPackage.AddRangeToArray(p);
+
+            
+            try {
+                __result = new ZPackage(Decompress(chunkedPackage));
+                BN_Logger.LogMessage($"decompressed package of size {chunkedPackage.Length} from {p.Length}");
+            } catch (Exception e) {
+                BN_Logger.LogError($"failed to decompress package of size {chunkedPackage.Length} from {p.Length}");
+            }
+            chunkedPackage = new byte[0];
         }
 
 
