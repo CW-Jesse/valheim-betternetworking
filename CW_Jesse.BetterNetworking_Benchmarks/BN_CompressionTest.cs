@@ -17,14 +17,11 @@ namespace CW_Jesse.BetterNetworking {
 
         byte[] bufferToCompress;
 
-        Compressor zstdCompressor, zstdCompressorDict0, zstdCompressorDict1;
-        Decompressor zstdDecompressor, zstdDecompressorDict0, zstdDecompressorDict1;
-
-        CompressionStream zstdCompressionStream;
+        Compressor zstdCompressor, zstdCompressorDict;
+        Decompressor zstdDecompressor, zstdDecompressorDict;
 
         byte[] zstdCompressedBuffer;
-        byte[] zstdCompressedBufferDict0;
-        byte[] zstdCompressedBufferDict1;
+        byte[] zstdCompressedBufferDict;
 
         byte[] lz4CompressedBuffer;
 
@@ -45,19 +42,21 @@ namespace CW_Jesse.BetterNetworking {
         [GlobalSetup]
         public void GlobalSetup() {
             bufferToCompress = File.ReadAllBytes("TestFile");
+            bufferToCompress = bufferToCompress.Take(1024*10*4).ToArray();
 
-            //byte[] zstdDict0 = DictBuilder.TrainFromBuffer(new[] { bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress });
-            //byte[] zstdDict1 = File.ReadAllBytes("dict.dict"); // a poorly trained dictionary is worse than no dictionary at all
+            byte[] zstdDict = DictBuilder.TrainFromBuffer(new[] { bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress });
+            //byte[] zstdDict = File.ReadAllBytes("dict.dict"); // this dictionary is not trained on the data and has no benefit
 
             zstdCompressor = new Compressor(levelZstd);
             zstdDecompressor = new Decompressor();
 
-            //zstdCompressorDict0 = new Compressor(levelZstd);
-            //zstdCompressorDict0.LoadDictionary(zstdDict0);
-            //zstdCompressorDict1 = new Compressor(levelZstd);
-            //zstdCompressorDict1.LoadDictionary(zstdDict1);
+            zstdCompressorDict = new Compressor(levelZstd);
+            zstdCompressorDict.LoadDictionary(zstdDict);
+            zstdDecompressorDict = new Decompressor();
+            zstdDecompressorDict.LoadDictionary(zstdDict);
 
             zstdCompressedBuffer = zstdCompressor.Wrap(bufferToCompress).ToArray();
+            zstdCompressedBufferDict = zstdCompressorDict.Wrap(bufferToCompress).ToArray();
             lz4CompressedBuffer = LZ4Pickler.Pickle(bufferToCompress, levelLz4);
         }
 
@@ -65,16 +64,15 @@ namespace CW_Jesse.BetterNetworking {
         public void GlobalCleanup() {
             Console.WriteLine($"Original size: {bufferToCompress.Length}");
             Console.WriteLine($"Size (zstd {levelZstd}): {(float)zstdCompressor.Wrap(bufferToCompress).Length / bufferToCompress.Length}");
-            //Console.WriteLine($"Size (zstdDict0 {levelZstd}): {(float)zstdCompressorDict0.Wrap(bufferToCompress).Length / bufferToCompress.Length}");
-            //Console.WriteLine($"Size (zstdDict1 {levelZstd}): {(float)zstdCompressorDict1.Wrap(bufferToCompress).Length / bufferToCompress.Length}");
+            Console.WriteLine($"Size (zstdDict {levelZstd}): {(float)zstdCompressorDict.Wrap(bufferToCompress).Length / bufferToCompress.Length}");
             Console.WriteLine($"Size (lz4 {levelLz4}): {(float)LZ4Pickler.Pickle(bufferToCompress, levelLz4).Length / bufferToCompress.Length}");
             Console.WriteLine($"Size (zlib {levelZlib}): {(float)ZlibStream.CompressBuffer(bufferToCompress, levelZlib).Length / bufferToCompress.Length}"); // no good
         }
 
-        //[Benchmark] public void CompressBN_New() => zstdCompressor.Wrap(bufferToCompress).ToArray();
-        //[Benchmark] public void DecompressBN_New() => zstdDecompressor.Unwrap(zstdCompressedBuffer);
-        //[Benchmark] public void DecompressBN_NewDict0() => zstdDecompressorDict0.Unwrap(zstdCompressedBufferDict0);
-        //[Benchmark] public void DecompressBN_NewDict1() => zstdDecompressorDict1.Unwrap(zstdCompressedBufferDict1);
+        [Benchmark] public void CompressBN_New() => zstdCompressor.Wrap(bufferToCompress).ToArray();
+        [Benchmark] public void DecompressBN_New() => zstdDecompressor.Unwrap(zstdCompressedBuffer).ToArray();
+        [Benchmark] public void CompressBN_NewDict() => zstdCompressorDict.Wrap(bufferToCompress).ToArray();
+        [Benchmark] public void DecompressBN_NewDict() => zstdDecompressorDict.Unwrap(zstdCompressedBufferDict).ToArray();
         //[Benchmark] public void TrainDictBN_New() => DictBuilder.TrainFromBuffer(new[] { bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress, bufferToCompress });
         //[Benchmark]
         //public void CompressBN_NewStream() {
@@ -83,7 +81,7 @@ namespace CW_Jesse.BetterNetworking {
         //    }
         //}
         [Benchmark] public void CompressBN_Old() => LZ4Pickler.Pickle(bufferToCompress, levelLz4);
-        //[Benchmark] public void DecompressBN_Old() => LZ4Pickler.Unpickle(lz4CompressedBuffer);
-        //[Benchmark] public void CompressValheimVanilla() => ZlibStream.CompressBuffer(bufferToCompress, levelZlib); // horrible
+        [Benchmark] public void DecompressBN_Old() => LZ4Pickler.Unpickle(lz4CompressedBuffer);
+        [Benchmark] public void CompressValheimVanilla() => ZlibStream.CompressBuffer(bufferToCompress, levelZlib); // horrible
     }
 }
