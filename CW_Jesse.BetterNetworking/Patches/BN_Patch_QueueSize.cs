@@ -14,11 +14,13 @@ namespace CW_Jesse.BetterNetworking {
 
         // higher options are what cause people to run into Steam errors
         public enum Options_NetworkQueueSize {
-            [Description("128 KB")]
-            _128KB,
-            [Description("64 KB <b>[default]</b>")]
+            [Description("80 KB")]
+            _80KB,
+            [Description("64 KB")]
             _64KB,
-            [Description("32 KB")]
+            [Description("48 KB")]
+            _48KB,
+            [Description("32 KB <b>[default]</b>")]
             _32KB,
             [Description("[Valheim default]")]
             _vanilla
@@ -29,10 +31,11 @@ namespace CW_Jesse.BetterNetworking {
             BetterNetworking.configNetworkQueueSize = config.Bind(
                 "Networking",
                 "Queue Size",
-                Options_NetworkQueueSize._64KB,
+                Options_NetworkQueueSize._32KB,
                 new ConfigDescription(
                     "The better your upload speed, the higher you can set this.\n" +
                     "Higher options aren't available as they can cause errors in Steam.\n" +
+                    "32 KB ends up spiking up to 320 KB/s, or 2.5 mbps per peer, or half that if the update rate is set to 50%." +
                     "---\n" +
                     "If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
                     "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
@@ -47,14 +50,14 @@ namespace CW_Jesse.BetterNetworking {
             int originalQueueSize = __result;
 #endif
             switch (BetterNetworking.configNetworkQueueSize.Value) {
-                case Options_NetworkQueueSize._256KB:
-                    __result -= 256 * 1024 - DEFAULT_QUEUE_SIZE;
-                    break;
-                case Options_NetworkQueueSize._128KB:
-                    __result -= 128 * 1024 - DEFAULT_QUEUE_SIZE;
+                case Options_NetworkQueueSize._80KB:
+                    __result -= 80 * 1024 - DEFAULT_QUEUE_SIZE;
                     break;
                 case Options_NetworkQueueSize._64KB:
                     __result -= 64 * 1024 - DEFAULT_QUEUE_SIZE;
+                    break;
+                case Options_NetworkQueueSize._48KB:
+                    __result -= 48 * 1024 - DEFAULT_QUEUE_SIZE;
                     break;
                 case Options_NetworkQueueSize._32KB:
                     __result -= 32 * 1024 - DEFAULT_QUEUE_SIZE;
@@ -71,14 +74,14 @@ namespace CW_Jesse.BetterNetworking {
         static bool PlayFab_GetSendQueueSize(ref int __result, ref InFlightQueue ___m_inFlightQueue) {
 
             switch (BetterNetworking.configNetworkQueueSize.Value) {
-                case Options_NetworkQueueSize._256KB:
-                    __result = (int)___m_inFlightQueue.Bytes - (256 * 1024 - DEFAULT_QUEUE_SIZE);
-                    return false;
-                case Options_NetworkQueueSize._128KB:
-                    __result = (int)___m_inFlightQueue.Bytes - (128 * 1024 - DEFAULT_QUEUE_SIZE);
+                case Options_NetworkQueueSize._80KB:
+                    __result = (int)___m_inFlightQueue.Bytes - (80 * 1024 - DEFAULT_QUEUE_SIZE);
                     return false;
                 case Options_NetworkQueueSize._64KB:
                     __result = (int)___m_inFlightQueue.Bytes - (64 * 1024 - DEFAULT_QUEUE_SIZE);
+                    return false;
+                case Options_NetworkQueueSize._48KB:
+                    __result = (int)___m_inFlightQueue.Bytes - (48 * 1024 - DEFAULT_QUEUE_SIZE);
                     return false;
                 case Options_NetworkQueueSize._32KB:
                     __result = (int)___m_inFlightQueue.Bytes - (32 * 1024 - DEFAULT_QUEUE_SIZE);
