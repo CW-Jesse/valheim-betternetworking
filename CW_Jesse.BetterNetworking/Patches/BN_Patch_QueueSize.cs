@@ -35,7 +35,7 @@ namespace CW_Jesse.BetterNetworking {
                 new ConfigDescription(
                     "The better your upload speed, the higher you can set this.\n" +
                     "Higher options aren't available as they can cause errors in Steam.\n" +
-                    "32 KB can spike to 320 KB/s per peer, or half that if the update rate is set to 50%." +
+                    "With compression and 100% update rate, 32 KB spikes upload speeds to 256 KB/s. (32KB*0.4*20/s)" +
                     "---\n" +
                     "If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
                     "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
