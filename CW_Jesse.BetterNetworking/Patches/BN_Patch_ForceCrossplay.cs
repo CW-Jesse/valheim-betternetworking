@@ -22,7 +22,7 @@ namespace CW_Jesse.BetterNetworking {
                 "Force Crossplay",
                 Options_ForceCrossplay.vanilla,
                 new ConfigDescription(
-                    "Requires restart.\nCrossplay enabled: Forces dedicated servers to use new PlayFab networking stack.\nCrossplay disabled: Forces dedicated servers to use Steamworks network stack.\nVanilla behaviour: Listen for -crossplay flag."
+                    "Requires restart.\nplayfab (crossplay enabled): Forces dedicated servers to use new PlayFab networking stack.\nsteamworks (crossplay disabled): Forces dedicated servers to use Steamworks network stack.\nvanilla: Listen for -crossplay flag."
                 ));
         }
 
