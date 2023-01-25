@@ -11,13 +11,9 @@ namespace CW_Jesse.BetterNetworking {
         private const int DEFAULT_QUEUE_SIZE = 10240;
         private const int DEFAULT_MINIMUM_QUEUE_SIZE = 2048;
 
+
+        // higher options are what cause people to run into Steam errors
         public enum Options_NetworkQueueSize {
-            [Description("1024 KB")]
-            _1024KB,
-            [Description("512 KB")]
-            _512KB,
-            [Description("256 KB")]
-            _256KB,
             [Description("128 KB")]
             _128KB,
             [Description("64 KB <b>[default]</b>")]
@@ -36,6 +32,7 @@ namespace CW_Jesse.BetterNetworking {
                 Options_NetworkQueueSize._64KB,
                 new ConfigDescription(
                     "The better your upload speed, the higher you can set this.\n" +
+                    "Higher options aren't available as they can cause errors in Steam.\n" +
                     "---\n" +
                     "If others experience lag/desync for things <i>around</i> you, increase your queue size.\n" +
                     "If your <i>character</i> is lagging for others, decrease your update rate and/or queue size."
@@ -50,12 +47,6 @@ namespace CW_Jesse.BetterNetworking {
             int originalQueueSize = __result;
 #endif
             switch (BetterNetworking.configNetworkQueueSize.Value) {
-                case Options_NetworkQueueSize._1024KB:
-                    __result -= 1024 * 1024 - DEFAULT_QUEUE_SIZE;
-                    break;
-                case Options_NetworkQueueSize._512KB:
-                    __result -= 512 * 1024 - DEFAULT_QUEUE_SIZE;
-                    break;
                 case Options_NetworkQueueSize._256KB:
                     __result -= 256 * 1024 - DEFAULT_QUEUE_SIZE;
                     break;
@@ -80,12 +71,6 @@ namespace CW_Jesse.BetterNetworking {
         static bool PlayFab_GetSendQueueSize(ref int __result, ref InFlightQueue ___m_inFlightQueue) {
 
             switch (BetterNetworking.configNetworkQueueSize.Value) {
-                case Options_NetworkQueueSize._1024KB:
-                    __result = (int)___m_inFlightQueue.Bytes - (1024 * 1024 - DEFAULT_QUEUE_SIZE);
-                    return false;
-                case Options_NetworkQueueSize._512KB:
-                    __result = (int)___m_inFlightQueue.Bytes - (512 * 1024 - DEFAULT_QUEUE_SIZE);
-                    return false;
                 case Options_NetworkQueueSize._256KB:
                     __result = (int)___m_inFlightQueue.Bytes - (256 * 1024 - DEFAULT_QUEUE_SIZE);
                     return false;
