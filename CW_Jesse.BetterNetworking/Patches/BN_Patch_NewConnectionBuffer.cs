@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CW_Jesse.BetterNetworking.Patches {
+namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public class BN_Patch_NewConnectionBuffer {
