@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
+using BepInEx.Logging;
 using HarmonyLib;
 using Steamworks;
 
@@ -32,11 +35,11 @@ namespace CW_Jesse.BetterNetworking {
 
             BN_Patch_Compression.InitCompressor();
 
-            BN_Patch_ForceCrossplay.InitConfig(Config);
             BN_Patch_Compression.InitConfig(Config);
             BN_Patch_UpdateRate.InitConfig(Config);
             BN_Patch_SendRate.InitConfig(Config);
             BN_Patch_QueueSize.InitConfig(Config);
+            BN_Patch_DedicatedServer.InitConfig(Config);
 
             harmony.PatchAll();
         }
@@ -55,4 +58,32 @@ namespace CW_Jesse.BetterNetworking {
             harmony.UnpatchSelf();
         }
     }
+
+    [HarmonyPatch]
+    public class BN_Patch_DedicatedServer {
+
+        private static ConfigFile config;
+
+        public static void InitConfig(ConfigFile configFile) {
+            config = configFile;
+        }
+
+        [HarmonyPatch(typeof(ZNet), nameof(ZNet.IsDedicated))]
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> DedicatedServerInit(IEnumerable<CodeInstruction> instructions) {
+            bool isDedicated = false;
+
+            foreach (var instruction in instructions) {
+                if (instruction.opcode == OpCodes.Ldc_I4_1) {
+                    isDedicated = true;
+
+                    BN_Patch_ForceCrossplay.InitConfig(config);
+                }
+            }
+
+            BN_Utils.isDedicated = isDedicated;
+            return instructions;
+        }
+    }
+
 }

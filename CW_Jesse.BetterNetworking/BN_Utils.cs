@@ -48,8 +48,6 @@ namespace CW_Jesse.BetterNetworking {
             return "unknown peer";
         }
 
-        public static bool IsDedicated() {
-            return ZNet.instance.IsDedicated();
-        }
+        public static bool isDedicated = false;
     }
 }

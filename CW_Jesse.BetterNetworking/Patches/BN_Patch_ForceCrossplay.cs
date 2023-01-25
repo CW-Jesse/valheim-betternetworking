@@ -18,7 +18,7 @@ namespace CW_Jesse.BetterNetworking {
 
         public static void InitConfig(ConfigFile config) {
             BetterNetworking.configForceCrossplay = config.Bind(
-                "Networking",
+                "Dedicated Server",
                 "Force Crossplay",
                 Options_ForceCrossplay.vanilla,
                 new ConfigDescription(
@@ -29,12 +29,14 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(FejdStartup), "ParseServerArguments")]
         [HarmonyPostfix]
         private static void ForceCrossplay() {
-            if (BetterNetworking.configForceCrossplay.Value == Options_ForceCrossplay.playfab) {
-                ZNet.m_onlineBackend = OnlineBackendType.PlayFab;
-                ZPlayFabMatchmaking.LookupPublicIP();
-            }
-            if (BetterNetworking.configForceCrossplay.Value == Options_ForceCrossplay.steamworks) {
-                ZNet.m_onlineBackend = OnlineBackendType.Steamworks;
+            if (BN_Utils.isDedicated) {
+                if (BetterNetworking.configForceCrossplay.Value == Options_ForceCrossplay.playfab) {
+                    ZNet.m_onlineBackend = OnlineBackendType.PlayFab;
+                    ZPlayFabMatchmaking.LookupPublicIP();
+                }
+                if (BetterNetworking.configForceCrossplay.Value == Options_ForceCrossplay.steamworks) {
+                    ZNet.m_onlineBackend = OnlineBackendType.Steamworks;
+                }
             }
         }
     }

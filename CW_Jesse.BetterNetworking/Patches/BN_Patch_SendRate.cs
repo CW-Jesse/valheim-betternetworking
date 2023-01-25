@@ -140,7 +140,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 GCHandle pinnedVal = GCHandle.Alloc(valBuffer, GCHandleType.Pinned);
                 try {
-                    if (BN_Utils.IsDedicated()) {
+                    if (BN_Utils.isDedicated) {
                         SteamGameServerNetworkingUtils.GetConfigValue(
                             valueType,
                             ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
@@ -178,7 +178,7 @@ namespace CW_Jesse.BetterNetworking {
 
                 GCHandle pinned_SendRate = GCHandle.Alloc(value, GCHandleType.Pinned);
                 try {
-                    if (BN_Utils.IsDedicated()) {
+                    if (BN_Utils.isDedicated) {
                         SteamGameServerNetworkingUtils.SetConfigValue(
                             valueType,
                             ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global,
