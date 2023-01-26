@@ -5,15 +5,12 @@ using System.ComponentModel;
 using System.IO;
 
 using HarmonyLib;
-using Steamworks;
 using BepInEx.Configuration;
 using PlayFab.Party;
-using BepInEx;
 using System.Reflection;
 using System.Linq;
 
 using ZstdSharp;
-using System.Runtime.CompilerServices;
 
 namespace CW_Jesse.BetterNetworking {
 
@@ -43,7 +40,6 @@ namespace CW_Jesse.BetterNetworking {
                 dictStream.Read(compressionDict, 0, (int)dictStream.Length);
             }
 
-            System.Threading.Thread.Sleep(3000);
             compressor = new Compressor(ZSTD_LEVEL);
             compressor.LoadDictionary(compressionDict);
             decompressor = new Decompressor();
