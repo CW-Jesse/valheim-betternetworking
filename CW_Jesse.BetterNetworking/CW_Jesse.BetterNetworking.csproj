@@ -6,7 +6,7 @@
     <Copyright>CW_Jesse 2023</Copyright>
     <Company>CW_Jesse</Company>
     <RepositoryUrl>https://www.nexusmods.com/valheim/mods/1570</RepositoryUrl>
-    <Version>2.1.1</Version>
+    <Version>2.1.2</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
   </PropertyGroup>
