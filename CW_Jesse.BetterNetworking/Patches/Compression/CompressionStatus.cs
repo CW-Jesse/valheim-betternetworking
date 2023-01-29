@@ -20,6 +20,10 @@ namespace CW_Jesse.BetterNetworking {
                 BN_Logger.LogWarning("Compression: Tried to add null peer");
                 return false;
             }
+            if (IsPeerExist(peer)) {
+                BN_Logger.LogWarning($"Attempted to add existing peer; assuming disconnection");
+                RemovePeer(peer);
+            }
 
             peerStatuses.Add(peer, new PeerCompressionStatus());
             return true;

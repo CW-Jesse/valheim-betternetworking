@@ -30,7 +30,6 @@ namespace CW_Jesse.BetterNetworking {
             if (!__instance.IsConnected()) { return; }
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetReceiveCompressionStarted(peer)) { return; }
 
             if (__result == null) { return; }
 
@@ -38,8 +37,14 @@ namespace CW_Jesse.BetterNetworking {
             try {
                 decompressedResult = Decompress(__result.GetArray());
                 __result = new ZPackage(decompressedResult);
+                if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
+                    BN_Logger.LogError($"Received unexpected compressed message from {peer} (Steamworks)");
+                    CompressionStatus.SetReceiveCompressionStarted(peer, true);
+                }
             } catch {
-                BN_Logger.LogError($"Could not decompress message from {peer} (Steamworks)");
+                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
+                    BN_Logger.LogError($"Could not decompress message from {peer} (Steamworks)");
+                }
             }
         }
     }

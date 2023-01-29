@@ -35,7 +35,21 @@ namespace CW_Jesse.BetterNetworking {
             object sender, PlayFabPlayer from, byte[] compressedBuffer) {
 
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetReceiveCompressionStarted(peer)) { return true; }
+            byte[] decompressedResult;
+
+            try {
+                decompressedResult = Decompress(compressedBuffer);
+                if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
+                    BN_Logger.LogError($"Received unexpected compressed message from {peer} (PlayFab)");
+                    CompressionStatus.SetReceiveCompressionStarted(peer, true);
+                }
+            } catch {
+                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
+                    BN_Logger.LogError($"Could not decompress message from {peer} (PlayFab)");
+                    CompressionStatus.SetReceiveCompressionStarted(peer, false);
+                }
+                return true;
+            }
 
             if (!(from.EntityKey.Id == ___m_remotePlayerId))
                 return false;
@@ -45,15 +59,6 @@ namespace CW_Jesse.BetterNetworking {
             if (!___m_isClient && ___m_didRecover)
                 AccessTools.Method(typeof(ZPlayFabSocket), "CheckReestablishConnection").Invoke(__instance, new object[] { compressedBuffer });
             else {
-
-                byte[] decompressedResult;
-                try {
-                    decompressedResult = Decompress(compressedBuffer);
-                } catch {
-                    BN_Logger.LogError($"Could not decompress message from {peer} (PlayFab)");
-                    return true;
-                }
-
                 ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outDecompress").GetValue(___m_zlibWorkQueue)).Enqueue(decompressedResult);
             }
 
