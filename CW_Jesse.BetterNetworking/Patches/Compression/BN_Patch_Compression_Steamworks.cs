@@ -38,12 +38,13 @@ namespace CW_Jesse.BetterNetworking {
                 decompressedResult = Decompress(__result.GetArray());
                 __result = new ZPackage(decompressedResult);
                 if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogError($"Received unexpected compressed message from {peer} (Steamworks)");
+                    BN_Logger.LogWarning($"Received unexpected compressed message from {peer} (Steamworks); assuming compression started");
                     CompressionStatus.SetReceiveCompressionStarted(peer, true);
                 }
             } catch {
                 if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogError($"Could not decompress message from {peer} (Steamworks)");
+                    BN_Logger.LogWarning($"Could not decompress message from {peer} (Steamworks); assuming compression stopped");
+                    CompressionStatus.SetReceiveCompressionStarted(peer, false);
                 }
             }
         }

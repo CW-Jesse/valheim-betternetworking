@@ -40,12 +40,12 @@ namespace CW_Jesse.BetterNetworking {
             try {
                 decompressedResult = Decompress(compressedBuffer);
                 if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogError($"Received unexpected compressed message from {peer} (PlayFab)");
+                    BN_Logger.LogWarning($"Received unexpected compressed message from {peer} (PlayFab); assuming compression started");
                     CompressionStatus.SetReceiveCompressionStarted(peer, true);
                 }
             } catch {
                 if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogError($"Could not decompress message from {peer} (PlayFab)");
+                    BN_Logger.LogWarning($"Could not decompress message from {peer} (PlayFab); assuming compression stopped");
                     CompressionStatus.SetReceiveCompressionStarted(peer, false);
                 }
                 return true;
