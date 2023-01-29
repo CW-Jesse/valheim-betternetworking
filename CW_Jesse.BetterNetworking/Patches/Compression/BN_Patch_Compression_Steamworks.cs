@@ -28,10 +28,19 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPostfix]
         private static void Steamworks_ReceiveCompressedPackages(ref ZPackage __result, ref ZSteamSocket __instance) {
             if (!__instance.IsConnected()) { return; }
+
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
             if (!CompressionStatus.GetReceiveCompressionStarted(peer)) { return; }
 
-            if (__result != null) { __result = new ZPackage(Decompress(__result.GetArray())); }
+            if (__result == null) { return; }
+
+            byte[] decompressedResult;
+            try {
+                decompressedResult = Decompress(__result.GetArray());
+                __result = new ZPackage(decompressedResult);
+            } catch {
+                BN_Logger.LogError($"Could not decompress message from {peer} (Steamworks)");
+            }
         }
     }
 }
