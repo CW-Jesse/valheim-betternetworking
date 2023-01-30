@@ -48,7 +48,8 @@ _Features_
 _Better Networking links_
 
 * Please [provide feedback!](https://www.nexusmods.com/valheim/mods/1570?tab=posts)
-* Please [report bugs!](https://www.nexusmods.com/valheim/mods/1570?tab=bugs)
+* Please [examine my code!](https://github.com/CW-Jesse/valheim-betternetworking)
+* Please [report bugs!](https://github.com/CW-Jesse/valheim-betternetworking/issues)
 * Please [endorse on Nexus Mods!](https://www.nexusmods.com/valheim/mods/1570)
 * Please [endorse on ThunderStore!](https://valheim.thunderstore.io/package/CW_Jesse/BetterNetworking_Valheim/)
 
