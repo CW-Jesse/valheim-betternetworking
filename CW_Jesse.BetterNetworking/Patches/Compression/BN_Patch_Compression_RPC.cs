@@ -64,6 +64,14 @@ namespace CW_Jesse.BetterNetworking {
             if (ZNet.instance == null) { return; }
             if (CompressionStatus.GetSendCompressionStarted(peer) == started) { return; } // don't do anything if nothing's changed
             peer.m_rpc.Invoke(RPC_COMPRESSION_STARTED, new object[] { started });
+            switch (ZNet.m_onlineBackend) {
+                case OnlineBackendType.Steamworks:
+                    peer.m_socket.Flush(); // since we compress the entire send queue, flush existing send queue before starting/stopping compression
+                    break;
+                case OnlineBackendType.PlayFab:
+                    //peer.m_socket.Flush(); // not necessary as we don't compress entire queue, would throw NotImplementedException anyway
+                    break;
+            }
             CompressionStatus.SetSendCompressionStarted(peer, started);
             BN_Logger.LogMessage($"Compression: Compression to {BN_Utils.GetPeerName(peer)}: {started}");
         }
