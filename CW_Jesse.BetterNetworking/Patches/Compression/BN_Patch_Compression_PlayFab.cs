@@ -81,7 +81,10 @@ namespace CW_Jesse.BetterNetworking {
 
         [HarmonyPatch(typeof(ZPlayFabSocket), "ResetAll")]
         [HarmonyPostfix]
-        private static void PlayFab_ConnectionReset(ZNetPeer peer) {
+        private static void PlayFab_ConnectionReset(ref ZPlayFabSocket __instance) {
+            ZNetPeer peer = BN_Utils.GetPeer(__instance);
+            if (peer == null) return; // ResetAll is called even when connection is closing, which means null peer
+
             CompressionStatus.RemovePeer(peer);
             CompressionStatus.AddPeer(peer);
             BN_Logger.LogMessage($"Compression (PlayFab): {BN_Utils.GetPeerName(peer)} re-connected");
