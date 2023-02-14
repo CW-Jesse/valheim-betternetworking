@@ -73,7 +73,9 @@ namespace CW_Jesse.BetterNetworking {
             try {
                 AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { Decompress(maybeCompressedBuffer) });
             } catch {
-                BN_Logger.LogWarning($"Compression (PlayFab): Could not decompress message from {BN_Utils.GetPeerName(peer)}; did they lose internet or Alt+F4?");
+                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
+                    BN_Logger.LogWarning($"Compression (PlayFab): Could not decompress message from {BN_Utils.GetPeerName(peer)}; did they lose internet or Alt+F4?");
+                }
                 return true;
             }
             return false;
@@ -85,10 +87,12 @@ namespace CW_Jesse.BetterNetworking {
             ZNetPeer peer = BN_Utils.GetPeer(__instance);
             if (peer == null) return; // ResetAll is called even when connection is closing, which means null peer
 
-            CompressionStatus.RemovePeer(peer);
-            CompressionStatus.AddPeer(peer);
-            BN_Logger.LogMessage($"Compression (PlayFab): {BN_Utils.GetPeerName(peer)} re-connected");
-            SendCompressionVersion(peer);
+            if (CompressionStatus.IsPeerExist(peer)) { // only reset peer info we already have peer info
+                CompressionStatus.RemovePeer(peer);
+                CompressionStatus.AddPeer(peer);
+                BN_Logger.LogMessage($"Compression (PlayFab): {BN_Utils.GetPeerName(peer)} re-connected");
+                SendCompressionVersion(peer);
+            }
         }
     }
 }
