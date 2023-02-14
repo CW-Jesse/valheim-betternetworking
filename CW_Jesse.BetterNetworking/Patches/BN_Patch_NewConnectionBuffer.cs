@@ -24,7 +24,7 @@ namespace CW_Jesse.BetterNetworking {
         private class SendBufferOnAddPeer {
             private static void Postfix(ZDOMan __instance, ZNetPeer netPeer) {
                 if (packageBuffer.Count > 0) {
-                    BN_Logger.LogMessage($"Sending {packageBuffer.Count} buffered packages");
+                    BN_Logger.LogWarning($"Connection buffer: Sending {packageBuffer.Count} buffered packages; Valheim or a mod is trying to send data too early");
 
                     foreach (ZPackage package in packageBuffer) {
                         AccessTools.Method(typeof(ZDOMan), "RPC_ZDOData").Invoke(__instance, new object[] { netPeer.m_rpc, package });

@@ -21,7 +21,7 @@ namespace CW_Jesse.BetterNetworking {
                 return false;
             }
             if (IsPeerExist(peer)) {
-                BN_Logger.LogWarning($"Attempted to add existing peer; assuming disconnection");
+                BN_Logger.LogWarning($"Compression: Attempted to add existing peer ({BN_Utils.GetPeerName(peer)}); did they lose internet or Alt+F4?");
                 RemovePeer(peer);
             }
 

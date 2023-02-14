@@ -73,6 +73,7 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPostfix]
         private static void OnConnect(ref ZNetPeer peer) {
             CompressionStatus.AddPeer(peer);
+            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} connected");
 
             RegisterRPCs(peer);
             SendCompressionVersion(peer, CompressionStatus.ourStatus.version);
@@ -82,13 +83,14 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPostfix]
         private static void OnDisconnect(ZNetPeer peer) {
             CompressionStatus.RemovePeer(peer);
+            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} disconnected");
         }
 
         internal static byte[] Compress(byte[] buffer) {
             byte[] compressedBuffer = compressor.Wrap(buffer).ToArray();
             if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info && buffer.Length > 256) { // small messages don't compress well but they also don't matter
                 float compressedSizePercentage = ((float)compressedBuffer.Length / (float)buffer.Length) * 100;
-                BN_Logger.LogInfo($"Sent {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
+                BN_Logger.LogInfo($"Compression: Sent {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
             }
             return compressedBuffer;
         }
@@ -96,7 +98,7 @@ namespace CW_Jesse.BetterNetworking {
             byte[] buffer = decompressor.Unwrap(compressedBuffer).ToArray();
             if (BetterNetworking.configLogMessages.Value >= BN_Logger.Options_Logger_LogLevel.info && buffer.Length > 256) { // small messages don't compress well but they also don't matter
                 float compressedSizePercentage = ((float)compressedBuffer.Length / (float)buffer.Length) * 100;
-                BN_Logger.LogInfo($"Received {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
+                BN_Logger.LogInfo($"Compression: Received {buffer.Length} B compressed to {compressedSizePercentage.ToString("0")}%");
             }
             return buffer;
         }

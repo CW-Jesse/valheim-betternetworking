@@ -40,12 +40,12 @@ namespace CW_Jesse.BetterNetworking {
             try {
                 decompressedResult = Decompress(compressedBuffer);
                 if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Received unexpected compressed message from {peer} (PlayFab); assuming compression started");
+                    BN_Logger.LogWarning($"Compression (PlayFab): Received unexpected compressed message from {BN_Utils.GetPeerName(peer)}; assuming compression started");
                     CompressionStatus.SetReceiveCompressionStarted(peer, true);
                 }
             } catch {
                 if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Could not decompress message from {peer} (PlayFab); assuming compression stopped");
+                    BN_Logger.LogWarning($"Compression (PlayFab): Could not decompress message from {BN_Utils.GetPeerName(peer)}; assuming compression stopped");
                     CompressionStatus.SetReceiveCompressionStarted(peer, false);
                 }
                 return true;
@@ -73,7 +73,7 @@ namespace CW_Jesse.BetterNetworking {
             try {
                 AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { Decompress(maybeCompressedBuffer) });
             } catch {
-                BN_Logger.LogError($"Could not decompress message from {peer} (PlayFab ReestablishConnection)");
+                BN_Logger.LogWarning($"Compression (PlayFab): Could not decompress message from {BN_Utils.GetPeerName(peer)}; did they lose internet or Alt+F4?");
                 return true;
             }
             return false;

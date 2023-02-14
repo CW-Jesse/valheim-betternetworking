@@ -21,11 +21,11 @@ namespace CW_Jesse.BetterNetworking {
             CompressionStatus.SetVersion(peer, version);
 
             if (CompressionStatus.ourStatus.version == version) {
-                BN_Logger.LogMessage($"Compression possible with {BN_Utils.GetPeerName(peer)}");
+                BN_Logger.LogMessage($"Compression: Compatible with {BN_Utils.GetPeerName(peer)}");
             } else if (CompressionStatus.ourStatus.version > version) {
-                BN_Logger.LogWarning($"{BN_Utils.GetPeerName(peer)} ({version}) has an older version of Better Networking; they should update");
+                BN_Logger.LogWarning($"Compression: {BN_Utils.GetPeerName(peer)} ({version}) has an older version of Better Networking; they should update");
             } else if (version > 0) {
-                BN_Logger.LogError($"{BN_Utils.GetPeerName(peer)} ({version}) has a newer version of Better Networking; you should update");
+                BN_Logger.LogError($"Compression: {BN_Utils.GetPeerName(peer)} ({version}) has a newer version of Better Networking; you should update");
             }
 
             if (CompressionStatus.GetIsCompatibleWith(peer)) {
@@ -65,12 +65,12 @@ namespace CW_Jesse.BetterNetworking {
             if (CompressionStatus.GetSendCompressionStarted(peer) == started) { return; } // don't do anything if nothing's changed
             peer.m_rpc.Invoke(RPC_COMPRESSION_STARTED, new object[] { started });
             CompressionStatus.SetSendCompressionStarted(peer, started);
-            BN_Logger.LogMessage($"Compression to {BN_Utils.GetPeerName(peer)}: {started}");
+            BN_Logger.LogMessage($"Compression: Compression to {BN_Utils.GetPeerName(peer)}: {started}");
         }
         private static void RPC_CompressionStarted(ZRpc rpc, bool peerCompressionStarted) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
             CompressionStatus.SetReceiveCompressionStarted(peer, peerCompressionStarted);
-            BN_Logger.LogMessage($"Compression from {BN_Utils.GetPeerName(peer)}: {peerCompressionStarted}");
+            BN_Logger.LogMessage($"Compression: Compression from {BN_Utils.GetPeerName(peer)}: {peerCompressionStarted}");
         }
     }
 }
