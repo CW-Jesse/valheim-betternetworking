@@ -78,5 +78,13 @@ namespace CW_Jesse.BetterNetworking {
             }
             return false;
         }
+
+        [HarmonyPatch(typeof(ZPlayFabSocket), "ResetAll")]
+        [HarmonyPostfix]
+        private static void PlayFab_ConnectionReset(ZNetPeer peer) {
+            CompressionStatus.RemovePeer(peer);
+            CompressionStatus.AddPeer(peer);
+            BN_Logger.LogMessage($"Compression (PlayFab): {BN_Utils.GetPeerName(peer)} re-connected");
+        }
     }
 }
