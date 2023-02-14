@@ -34,6 +34,7 @@ namespace CW_Jesse.BetterNetworking {
         }
 
         public static void SendCompressionEnabledStatus() {
+            if (ZNet.instance == null) { return; }
             foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
                 if (CompressionStatus.GetIsCompatibleWith(peer)) {
                     SendCompressionEnabledStatus(peer);
