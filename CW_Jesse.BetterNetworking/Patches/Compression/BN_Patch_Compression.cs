@@ -76,7 +76,7 @@ namespace CW_Jesse.BetterNetworking {
             BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} connected");
 
             RegisterRPCs(peer);
-            SendCompressionVersion(peer, CompressionStatus.ourStatus.version);
+            SendCompressionVersion(peer);
         }
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]

@@ -19,7 +19,7 @@ namespace CW_Jesse.BetterNetworking {
                 return false;
 
             AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { payload.Length });
-            if ((UnityEngine.Object)ZNet.instance != (UnityEngine.Object)null && ZNet.instance.HaveStopped)
+            if (ZNet.instance != null && ZNet.instance.HaveStopped)
                 AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { Compress(payload) });
             else
                 ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outCompress").GetValue(___m_zlibWorkQueue)).Enqueue(Compress(payload));
@@ -88,6 +88,7 @@ namespace CW_Jesse.BetterNetworking {
             CompressionStatus.RemovePeer(peer);
             CompressionStatus.AddPeer(peer);
             BN_Logger.LogMessage($"Compression (PlayFab): {BN_Utils.GetPeerName(peer)} re-connected");
+            SendCompressionVersion(peer);
         }
     }
 }

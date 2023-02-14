@@ -12,9 +12,9 @@ namespace CW_Jesse.BetterNetworking {
             peer.m_rpc.Register<bool>(RPC_COMPRESSION_STARTED, new Action<ZRpc, bool>(RPC_CompressionStarted));
         }
 
-        public static void SendCompressionVersion(ZNetPeer peer, int compressionVersion) {
+        public static void SendCompressionVersion(ZNetPeer peer) {
             if (ZNet.instance == null) { return; }
-            peer.m_rpc.Invoke(RPC_COMPRESSION_VERSION, new object[] { compressionVersion });
+            peer.m_rpc.Invoke(RPC_COMPRESSION_VERSION, new object[] { CompressionStatus.ourStatus.version });
         }
         private static void RPC_CompressionVersion(ZRpc rpc, int version) {
             ZNetPeer peer = BN_Utils.GetPeer(rpc);
