@@ -69,6 +69,9 @@ namespace CW_Jesse.BetterNetworking {
                     peer.m_socket.Flush(); // since we compress the entire send queue, flush existing send queue before starting/stopping compression
                     break;
                 case OnlineBackendType.PlayFab:
+                    if (started) {
+                        BN_Patch_Compression_PlayFab.FlushVanillaQueue(peer.m_socket);    
+                    }
                     //peer.m_socket.Flush(); // not necessary as we don't compress entire queue, would throw NotImplementedException anyway
                     break;
             }

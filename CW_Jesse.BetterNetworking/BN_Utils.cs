@@ -8,7 +8,7 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
-            BN_Logger.LogWarning("Utils: Didn't find peer by RPC");
+            BN_Logger.LogMessage("Utils: Didn't find peer by RPC");
             return null;
         }
         public static ZNetPeer GetPeer(ZPlayFabSocket socket) {
@@ -17,7 +17,7 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
-            BN_Logger.LogInfo($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
+            BN_Logger.LogMessage($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
             return null;
         }
         public static ZNetPeer GetPeer(ZSteamSocket socket) {
@@ -26,7 +26,7 @@ namespace CW_Jesse.BetterNetworking {
                     return znetPeer;
                 }
             }
-            BN_Logger.LogInfo($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
+            BN_Logger.LogMessage($"Utils: Didn't find peer by socket: {socket.GetHostName()}");
             return null;
         }
         public static string GetPeerName(ZSteamSocket socket) {

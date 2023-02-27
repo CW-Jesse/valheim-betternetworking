@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-
+using System.Reflection;
+using System.Threading;
 using HarmonyLib;
 using PlayFab.Party;
 
@@ -19,12 +20,10 @@ namespace CW_Jesse.BetterNetworking {
             if ((bool)AccessTools.Method(typeof(ZPlayFabSocket), "PartyResetInProgress").Invoke(__instance, null))
                 return false;
 
-            AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { payload.Length });
+            byte[] compressedPayload = Compress(payload);
+            AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { compressedPayload.Length });
             if (ZNet.instance != null) {
-                AccessTools.Method(typeof(ZPlayFabSocket), "LateUpdate").Invoke(__instance, null); // process queued (non-BN) messages, if any
-                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { Compress(payload) });
-            } else {
-                ((Queue<byte[]>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "m_outCompress").GetValue(___m_zlibWorkQueue)).Enqueue(Compress(payload));
+                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { compressedPayload });
             }
 
             return false;
@@ -99,6 +98,26 @@ namespace CW_Jesse.BetterNetworking {
                 BN_Logger.LogMessage($"Compression (PlayFab): reset connection with {BN_Utils.GetPeerName(peer)}");
                 SendCompressionVersion(peer);
             }
+        }
+        
+        public static void FlushVanillaQueue(ISocket socket) {
+            
+            // get parts needed to execute queue
+            PlayFabZLibWorkQueue zlibWorkQueue = (PlayFabZLibWorkQueue)AccessTools.Field(typeof(ZPlayFabSocket), "m_zlibWorkQueue").GetValue(socket);
+            // SemaphoreSlim workSemaphore = (SemaphoreSlim)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "s_workSemaphore").GetValue(zlibWorkQueue);
+            Mutex workersMutex = (Mutex)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "s_workersMutex").GetValue(zlibWorkQueue);
+            List<PlayFabZLibWorkQueue> workers = (List<PlayFabZLibWorkQueue>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "s_workers").GetValue(zlibWorkQueue);
+            MethodInfo execute = AccessTools.Method(typeof(PlayFabZLibWorkQueue), "Execute");
+            
+            // compress/decompress vanilla messages
+            workersMutex.WaitOne();
+            foreach (PlayFabZLibWorkQueue worker in workers) {
+                execute.Invoke(zlibWorkQueue, new object[] { });
+            }
+            workersMutex.ReleaseMutex();
+            
+            // send/receive vanilla messages
+            AccessTools.Method(typeof(ZPlayFabSocket), "LateUpdate").Invoke(socket, null);
         }
     }
 }
