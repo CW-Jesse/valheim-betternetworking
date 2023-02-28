@@ -1,5 +1,3 @@
-Please close the game through the in-game menu instead of using Alt+F4 until Better Networking 2.1.4.
-
 Now compatible with Mistlands!
 
 This mod **greatly improves multiplayer performance.** If you find this mod works as advertised, please endorse it!
@@ -23,6 +21,7 @@ _Settings (advanced)_
 
 _Useful information about Valheim_
 
+* ALWAYS quit the game using the in-game menu (NOT Alt+F4, closing console, etc.) Doing otherwise can cause issues. This is a problem with vanilla Valheim.
 * The player who arrives in an area first is responsible for lag there. Ideally, the people with the best internet should be ahead of the pack or first through a portal, at least until Better Networking 3.0.
 * Valheim multiplayer performance appears to better with crossplay disabled.
 
