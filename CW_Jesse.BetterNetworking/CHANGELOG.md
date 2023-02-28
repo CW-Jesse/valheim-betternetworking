@@ -1,3 +1,8 @@
+### 2.2.0
+- PlayFab: fixed failing to work in some cases
+- PlayFab: better handling of disconnections
+- PlayFab: simplified compression code
+- Steamworks: fixed failing to work in some cases
 ### 2.1.3
 - reverted to 2.1.1; for now, avoid using Alt+F4 to close the game
 ### 2.1.2
