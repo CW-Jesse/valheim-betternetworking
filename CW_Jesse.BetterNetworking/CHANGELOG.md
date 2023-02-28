@@ -1,3 +1,6 @@
+### 2.2.1
+- bugfix: more stable when some people have compression/BN disabled
+- bugfix: no longer spams log when unexpected messages received
 ### 2.2.0
 - PlayFab: fixed failing to work in some cases
 - PlayFab: better handling of disconnections

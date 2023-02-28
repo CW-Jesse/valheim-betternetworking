@@ -7,8 +7,8 @@
     <Company>CW_Jesse</Company>
     <RepositoryUrl>https://www.nexusmods.com/valheim/mods/1570</RepositoryUrl>
     <Version>2.1.2</Version>
-    <AssemblyVersion>2.2.0</AssemblyVersion>
-    <FileVersion>2.2.0</FileVersion>
+    <AssemblyVersion>2.2.1</AssemblyVersion>
+    <FileVersion>2.2.1</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
