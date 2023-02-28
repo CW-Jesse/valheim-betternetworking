@@ -74,7 +74,7 @@ namespace CW_Jesse.BetterNetworking {
             CompressionStatus.AddSocket(peer.m_socket);
 
             RegisterRPCs(peer);
-            SendCompressionVersion(peer.m_rpc);
+            SendCompressionVersion(peer);
         }
 
         // /// <summary>
@@ -84,12 +84,17 @@ namespace CW_Jesse.BetterNetworking {
         // [HarmonyPostfix]
         // private static void OnPeerInfoReceived(ref ZRpc rpc) {
         // }
-        
+
+        [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
+        [HarmonyPrefix]
+        private static void OnDisconnectPrefix(ZNetPeer peer) {
+            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} disconnected");
+        }
+
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPostfix]
-        private static void OnDisconnect(ZNetPeer peer) {
+        private static void OnDisconnectPostfix(ZNetPeer peer) {
             CompressionStatus.RemoveSocket(peer.m_socket);
-            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer.m_socket)} disconnected");
         }
 
         internal static byte[] Compress(byte[] buffer) {

@@ -2,12 +2,28 @@
 
 namespace CW_Jesse.BetterNetworking {
     class BN_Utils {
+
+        public static ZNetPeer GetPeer(ZRpc rpc) {
+            foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
+                if (peer.m_rpc == rpc) return peer;
+            }
+            return null;
+        }
+        public static ZNetPeer GetPeer(ISocket socket) {
+            foreach (ZNetPeer peer in ZNet.instance.GetPeers()) {
+                if (peer.m_socket == socket) return peer;
+            }
+            return null;
+        }
+        
+        public static string GetPeerName(ZNetPeer peer) {
+            if (peer == null) return "[null]";
+            if (peer.m_server) return "[server]";
+            return $"{peer.m_playerName}[{peer.m_socket.GetHostName()}]";
+            // return $"{peer.m_playerName}[{peer.m_socket.GetEndPointString()}]";
+        }
         public static string GetPeerName(ISocket socket) {
-            if (socket == null) return "null peer";
-            if (socket.IsHost()) return "[server]";
-            if (!string.IsNullOrEmpty(socket.GetHostName())) return socket.GetHostName();
-            if (!string.IsNullOrEmpty(socket.GetEndPointString())) return socket.GetEndPointString();
-            return "unknown peer";
+            return GetPeerName(GetPeer(socket));
         }
 
         public static bool isDedicated = false;

@@ -67,12 +67,20 @@ namespace CW_Jesse.BetterNetworking {
                 byte[] dataToDecompress = ___m_inDecompress.Dequeue();
                 try {
                     ___m_outDecompress.Enqueue(Decompress(dataToDecompress));
+                    if (!CompressionStatus.GetReceiveCompressionStarted(socket)) {
+                        BN_Logger.LogMessage($"PlayFab: Received unexpected compressed message from {BN_Utils.GetPeerName(socket)}");
+                        CompressionStatus.SetReceiveCompressionStarted(socket, true);
+                    }
                 } catch {
                     if (bnCompression) BN_Logger.LogInfo($"PlayFab: Failed BN decompress");
                     try {
                         ___m_outDecompress.Enqueue((byte[])AccessTools.Method(typeof(PlayFabZLibWorkQueue), "UncompressOnThisThread").Invoke(__instance, new object[] { dataToDecompress }));
+                        if (CompressionStatus.GetReceiveCompressionStarted(socket)) {
+                            BN_Logger.LogMessage($"PlayFab: Received unexpected vanilla message from {BN_Utils.GetPeerName(socket)}");
+                            CompressionStatus.SetReceiveCompressionStarted(socket, false);
+                        }
                     } catch {
-                        BN_Logger.LogInfo($"PlayFab: Failed vanilla decompress; keeping data (vanilla behaviour is to throw it away)");
+                        BN_Logger.LogMessage($"PlayFab: Failed vanilla decompress; keeping data (this data would have been lost without Better Networking)");
                         ___m_outDecompress.Enqueue(dataToDecompress);
                     }
                 }
