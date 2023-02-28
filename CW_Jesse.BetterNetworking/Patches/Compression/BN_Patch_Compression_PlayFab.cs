@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using HarmonyLib;
@@ -10,97 +11,68 @@ namespace CW_Jesse.BetterNetworking {
 
     [HarmonyPatch]
     public static class BN_Patch_Compression_PlayFab {
+        private static Dictionary<PlayFabZLibWorkQueue, ZPlayFabSocket> workQueueSockets = new Dictionary<PlayFabZLibWorkQueue, ZPlayFabSocket>();
 
-        [HarmonyPatch(typeof(ZPlayFabSocket), "InternalSend")]
-        [HarmonyPrefix]
-        private static bool PlayFab_InternalSend(ref ZPlayFabSocket __instance, ref bool ___m_useCompression, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue, byte[] payload) {
-            if (!CompressionStatus.GetSendCompressionStarted(BN_Utils.GetPeer(__instance))) { return true; }
-
-
-            if ((bool)AccessTools.Method(typeof(ZPlayFabSocket), "PartyResetInProgress").Invoke(__instance, null))
-                return false;
-
-            byte[] compressedPayload = Compress(payload);
-            AccessTools.Method(typeof(ZPlayFabSocket), "IncSentBytes").Invoke(__instance, new object[] { compressedPayload.Length });
-            if (ZNet.instance != null) {
-                AccessTools.Method(typeof(ZPlayFabSocket), "InternalSendCont").Invoke(__instance, new object[] { compressedPayload });
-            }
-
-            return false;
-        }
-
-        [HarmonyPatch(typeof(ZPlayFabSocket), "OnDataMessageReceived")]
-        [HarmonyPrefix]
-        private static bool PlayFab_OnDataMessageReceived(
-            ref ZPlayFabSocket __instance,
-            ref bool ___m_useCompression, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue, ref string ___m_remotePlayerId, ref bool ___m_isClient, ref bool ___m_didRecover,
-            object sender, PlayFabPlayer from, byte[] compressedBuffer) {
-
-            ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            byte[] decompressedResult;
-
-            try {
-                decompressedResult = Decompress(compressedBuffer);
-                if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Compression (PlayFab): Received unexpected compressed message from {BN_Utils.GetPeerName(peer)}; assuming compression started");
-                    CompressionStatus.SetReceiveCompressionStarted(peer, true);
-                }
-            } catch {
-                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Compression (PlayFab): Received unexpected decompressed message from {BN_Utils.GetPeerName(peer)}; assuming compression stopped");
-                    CompressionStatus.SetReceiveCompressionStarted(peer, false);
-                }
-                return true;
-            }
-
-            
-
-            if (!(from.EntityKey.Id == ___m_remotePlayerId))
-                return false;
-
-            AccessTools.Method(typeof(ZPlayFabSocket), "DelayedInit").Invoke(__instance, null);
-
-            AccessTools.Method(typeof(ZPlayFabSocket), "LateUpdate").Invoke(__instance, null); // process queued (non-BN) messages, if any
-            if (!___m_isClient && ___m_didRecover)
-                AccessTools.Method(typeof(ZPlayFabSocket), "CheckReestablishConnection").Invoke(__instance, new object[] { compressedBuffer });
-            else {
-                AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { decompressedResult });
-            }
-
-            return false;
-        }
-
-        [HarmonyPatch(typeof(ZPlayFabSocket), "CheckReestablishConnection")]
-        [HarmonyPrefix]
-        private static bool PlayFab_CheckReestablishConnection(ref ZPlayFabSocket __instance, byte[] maybeCompressedBuffer) {
-            ZNetPeer peer = BN_Utils.GetPeer(__instance);
-
-            try {
-                AccessTools.Method(typeof(ZPlayFabSocket), "OnDataMessageReceivedCont").Invoke(__instance, new object[] { Decompress(maybeCompressedBuffer) });
-            } catch {
-                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Compression (PlayFab): Could not decompress message from {BN_Utils.GetPeerName(peer)}; did they lose internet or Alt+F4?");
-                }
-                return true;
-            }
-            return false;
-        }
-
-        [HarmonyPatch(typeof(ZPlayFabSocket), "ResetAll")]
+        [HarmonyPatch(typeof(ZPlayFabSocket), MethodType.Constructor)]
         [HarmonyPostfix]
-        private static void PlayFab_ResetAll(ref ZPlayFabSocket __instance) {
-            ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (peer == null) return; // ResetAll is called even when connection is closing, which means null peer
+        private static void SocketOpen0(ref ZPlayFabSocket __instance, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue) { SocketOpen(ref __instance, ref ___m_zlibWorkQueue); }
+        
+        [HarmonyPatch(typeof(ZPlayFabSocket), MethodType.Constructor, new Type[] { typeof(string), typeof(Action<PlayFabMatchmakingServerData>) })]
+        [HarmonyPostfix]
+        private static void SocketOpen1(ref ZPlayFabSocket __instance, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue) { SocketOpen(ref __instance, ref ___m_zlibWorkQueue); }
+        
+        [HarmonyPatch(typeof(ZPlayFabSocket), MethodType.Constructor, new Type[] { typeof(PlayFabPlayer) })]
+        [HarmonyPostfix]
+        private static void SocketOpen2(ref ZPlayFabSocket __instance, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue) { SocketOpen(ref __instance, ref ___m_zlibWorkQueue); }
 
-            if (CompressionStatus.IsPeerExist(peer)) { // only reset peer info we already have peer info
-                CompressionStatus.RemovePeer(peer);
-                CompressionStatus.AddPeer(peer);
-                BN_Logger.LogMessage($"Compression (PlayFab): reset connection with {BN_Utils.GetPeerName(peer)}");
-                SendCompressionVersion(peer);
-            }
+        private static void SocketOpen(ref ZPlayFabSocket __instance, ref PlayFabZLibWorkQueue ___m_zlibWorkQueue) {
+            workQueueSockets.Add(___m_zlibWorkQueue, __instance);
+            BN_Logger.LogMessage($"PlayFab: Added socket {BN_Utils.GetPeerName(__instance)}");
         }
         
-        public static void FlushVanillaQueue(ISocket socket) {
+        [HarmonyPatch(typeof(ZPlayFabSocket), nameof(ZPlayFabSocket.Dispose))]
+        [HarmonyPostfix]
+        private static void SocketClose(ref PlayFabZLibWorkQueue ___m_zlibWorkQueue) {
+            workQueueSockets.Remove(___m_zlibWorkQueue);
+            BN_Logger.LogMessage($"PlayFab: Removed socket");
+        }
+
+        [HarmonyPatch(typeof(PlayFabZLibWorkQueue), "DoCompress")]
+        [HarmonyPrefix]
+        private static bool PlayFab_Compress(ref PlayFabZLibWorkQueue __instance, ref Queue<byte[]> ___m_inCompress, ref Queue<byte[]> ___m_outCompress) {
+            if (!workQueueSockets.TryGetValue(__instance, out ZPlayFabSocket socket)) return true;
+            if (!CompressionStatus.GetSendCompressionStarted(socket)) return true;
+            
+            while (___m_inCompress.Count > 0) {
+                try {
+                    ___m_outCompress.Enqueue(Compress(___m_inCompress.Dequeue()));
+                } catch {
+                    BN_Logger.LogError($"Failed compression");
+                }
+            }
+
+            return false;
+        }
+        
+        
+        [HarmonyPatch(typeof(PlayFabZLibWorkQueue), "DoUncompress")]
+        [HarmonyPrefix]
+        private static bool PlayFab_Decompress(ref PlayFabZLibWorkQueue __instance, ref Queue<byte[]> ___m_inDecompress, ref Queue<byte[]> ___m_outDecompress) {
+            if (!workQueueSockets.TryGetValue(__instance, out ZPlayFabSocket socket)) return true;
+            if (!CompressionStatus.GetReceiveCompressionStarted(socket)) return true;
+            
+            while (___m_inDecompress.Count > 0) {
+                try {
+                    ___m_outDecompress.Enqueue(Decompress(___m_inDecompress.Dequeue()));
+                } catch {
+                    BN_Logger.LogError($"Failed decompression");
+                }
+            }
+
+            return false;
+        }
+        
+        public static void FlushQueue(ISocket socket) {
             
             // get parts needed to execute queue
             PlayFabZLibWorkQueue zlibWorkQueue = (PlayFabZLibWorkQueue)AccessTools.Field(typeof(ZPlayFabSocket), "m_zlibWorkQueue").GetValue(socket);
@@ -109,14 +81,14 @@ namespace CW_Jesse.BetterNetworking {
             List<PlayFabZLibWorkQueue> workers = (List<PlayFabZLibWorkQueue>)AccessTools.Field(typeof(PlayFabZLibWorkQueue), "s_workers").GetValue(zlibWorkQueue);
             MethodInfo execute = AccessTools.Method(typeof(PlayFabZLibWorkQueue), "Execute");
             
-            // compress/decompress vanilla messages
+            // compress/decompress messages
             workersMutex.WaitOne();
             foreach (PlayFabZLibWorkQueue worker in workers) {
-                execute.Invoke(zlibWorkQueue, new object[] { });
+                execute.Invoke(worker, new object[] { });
             }
             workersMutex.ReleaseMutex();
             
-            // send/receive vanilla messages
+            // send/receive messages
             AccessTools.Method(typeof(ZPlayFabSocket), "LateUpdate").Invoke(socket, null);
         }
     }

@@ -36,7 +36,6 @@ namespace CW_Jesse.BetterNetworking {
             compressor.LoadDictionary(compressionDict);
             decompressor = new Decompressor();
             decompressor.LoadDictionary(compressionDict);
-
         }
 
         public static void InitConfig(ConfigFile config) {
@@ -72,18 +71,24 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
         [HarmonyPostfix]
         private static void OnConnect(ref ZNetPeer peer) {
-            CompressionStatus.AddPeer(peer);
-            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} connected");
+            CompressionStatus.AddSocket(peer.m_socket);
 
             RegisterRPCs(peer);
-            SendCompressionVersion(peer);
         }
+
+
+        [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
+        [HarmonyPostfix]
+        private static void OnPeerInfoReceived(ref ZRpc rpc) {
+            SendCompressionVersion(rpc);
+        }
+        
 
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPostfix]
         private static void OnDisconnect(ZNetPeer peer) {
-            CompressionStatus.RemovePeer(peer);
-            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer)} disconnected");
+            CompressionStatus.RemoveSocket(peer.m_socket);
+            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(peer.m_socket)} disconnected");
         }
 
         internal static byte[] Compress(byte[] buffer) {
@@ -102,17 +107,5 @@ namespace CW_Jesse.BetterNetworking {
             }
             return buffer;
         }
-
-        //private static int capCount = 0;
-        //[HarmonyPatch(typeof(ZPlayFabSocket), "InternalSend")]
-        //[HarmonyPostfix]
-        //private static void PlayFab_SendCompressedPackage(byte[] payload) {
-        //    string CaptureFolderName = "cap";
-        //    BN_Logger.LogWarning(payload.Length);
-        //    //return true;
-        //    Directory.CreateDirectory(CaptureFolderName);
-        //    File.WriteAllBytes(CaptureFolderName + Path.DirectorySeparatorChar + capCount, payload);
-        //    capCount++;
-        //}
     }
 }

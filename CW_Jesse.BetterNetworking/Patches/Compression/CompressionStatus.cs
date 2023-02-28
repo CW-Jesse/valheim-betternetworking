@@ -7,78 +7,79 @@ namespace CW_Jesse.BetterNetworking {
         private const int COMPRESSION_VERSION = 5;
         private const int COMPRESSION_VERSION_UNKNOWN = 0;
 
-        public static PeerCompressionStatus ourStatus = new PeerCompressionStatus() { version = COMPRESSION_VERSION, compressionEnabled = BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true };
-        private readonly static Dictionary<ZNetPeer, PeerCompressionStatus> peerStatuses = new Dictionary<ZNetPeer, PeerCompressionStatus>();
-        public class PeerCompressionStatus {
+        public static SocketCompressionStatus ourStatus = new SocketCompressionStatus() { version = COMPRESSION_VERSION, compressionEnabled = BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true };
+        private readonly static Dictionary<ISocket, SocketCompressionStatus> socketStatuses = new Dictionary<ISocket, SocketCompressionStatus>();
+        public class SocketCompressionStatus {
             public int version = COMPRESSION_VERSION_UNKNOWN;
             public bool compressionEnabled = false;
             public bool receivingCompressed = false;
             public bool sendingCompressed = false;
         }
-        public static bool AddPeer(ZNetPeer peer) {
-            if (peer == null) {
+        public static bool AddSocket(ISocket socket) {
+            if (socket == null) {
                 BN_Logger.LogWarning("Compression: Tried to add null peer");
                 return false;
             }
-            if (IsPeerExist(peer)) {
-                BN_Logger.LogWarning($"Compression: Attempted to add existing peer ({BN_Utils.GetPeerName(peer)}); did they lose internet or Alt+F4?");
-                RemovePeer(peer);
+            if (IsSocketExist(socket)) {
+                BN_Logger.LogWarning($"Compression: Removing existing peer ({BN_Utils.GetPeerName(socket)}); did they lose internet or Alt+F4?");
+                RemoveSocket(socket);
             }
 
-            peerStatuses.Add(peer, new PeerCompressionStatus());
+            BN_Logger.LogMessage($"Compression: {BN_Utils.GetPeerName(socket)} connected");
+            socketStatuses.Add(socket, new SocketCompressionStatus());
             return true;
         }
-        public static void RemovePeer(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) {
-                BN_Logger.LogWarning($"Compression: Tried to remove non-existent peer: {BN_Utils.GetPeerName(peer)}");
+        public static void RemoveSocket(ISocket socket) {
+            if (!IsSocketExist(socket)) {
+                BN_Logger.LogWarning($"Compression: Tried to remove non-existent peer: {BN_Utils.GetPeerName(socket)}");
                 return;
             }
 
-            peerStatuses.Remove(peer);
+            socketStatuses.Remove(socket);
         }
-        public static bool IsPeerExist(ZNetPeer peer) {
-            if (peer != null && peerStatuses.ContainsKey(peer)) { return true; }
+        public static bool IsSocketExist(ISocket socket) {
+            if (socket != null && socketStatuses.ContainsKey(socket)) { return true; }
             return false;
         }
 
-        public static int GetVersion(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) { return 0; }
-            return peerStatuses[peer].version;
+        public static int GetVersion(ISocket socket) {
+            if (!IsSocketExist(socket)) { return 0; }
+            return socketStatuses[socket].version;
         }
-        public static void SetVersion(ZNetPeer peer, int theirVersion) {
-            if (!IsPeerExist(peer)) { return; }
-            peerStatuses[peer].version = theirVersion;
+        public static void SetVersion(ISocket socket, int theirVersion) {
+            if (!IsSocketExist(socket)) { return; }
+            socketStatuses[socket].version = theirVersion;
         }
-        public static bool GetIsCompatibleWith(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) { return false; }
-            return (ourStatus.version == GetVersion(peer));
-        }
-
-        public static bool GetCompressionEnabled(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) { return false; }
-            return peerStatuses[peer].compressionEnabled;
-        }
-        public static void SetCompressionEnabled(ZNetPeer peer, bool enabled) {
-            if (!IsPeerExist(peer)) { return; }
-            peerStatuses[peer].compressionEnabled = enabled;
+        public static bool GetIsCompatibleWith(ISocket socket) {
+            if (!IsSocketExist(socket)) { return false; }
+            return (ourStatus.version == GetVersion(socket));
         }
 
-        public static bool GetSendCompressionStarted(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) { return false; }
-            return peerStatuses[peer].sendingCompressed;
+        public static bool GetCompressionEnabled(ISocket socket) {
+            if (!IsSocketExist(socket)) { return false; }
+            return socketStatuses[socket].compressionEnabled;
         }
-        public static void SetSendCompressionStarted(ZNetPeer peer, bool started) {
-            if (!IsPeerExist(peer)) { return; }
-            peerStatuses[peer].sendingCompressed = started;
+        public static void SetCompressionEnabled(ISocket socket, bool enabled) {
+            if (!IsSocketExist(socket)) { return; }
+            socketStatuses[socket].compressionEnabled = enabled;
         }
 
-        public static bool GetReceiveCompressionStarted(ZNetPeer peer) {
-            if (!IsPeerExist(peer)) { return false; }
-            return peerStatuses[peer].receivingCompressed;
+        public static bool GetSendCompressionStarted(ISocket socket) {
+            if (!IsSocketExist(socket)) { return false; }
+            return socketStatuses[socket].sendingCompressed;
         }
-        public static void SetReceiveCompressionStarted(ZNetPeer peer, bool started) {
-            if (!IsPeerExist(peer)) { return; }
-            peerStatuses[peer].receivingCompressed = started;
+        public static void SetSendCompressionStarted(ISocket socket, bool started) {
+            if (!IsSocketExist(socket)) { return; }
+            socketStatuses[socket].sendingCompressed = started;
+        }
+
+        public static bool GetReceiveCompressionStarted(ISocket socket) {
+            if (!IsSocketExist(socket)) { return false; }
+            return socketStatuses[socket].receivingCompressed;
+        }
+        public static void SetReceiveCompressionStarted(ISocket socket, bool started) {
+            if (!IsSocketExist(socket)) { return; }
+            socketStatuses[socket].receivingCompressed = started;
         }
     }
 }

@@ -16,9 +16,8 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZSteamSocket), "SendQueuedPackages")]
         [HarmonyPrefix]
         private static bool Steamworks_SendCompressedPackages(ref ZSteamSocket __instance, ref Queue<Byte[]> ___m_sendQueue) {
-            if (!__instance.IsConnected()) { return false; }
-            ZNetPeer peer = BN_Utils.GetPeer(__instance);
-            if (!CompressionStatus.GetSendCompressionStarted(peer)) { return true; }
+            if (!__instance.IsConnected()) return false;
+            if (!CompressionStatus.GetSendCompressionStarted(__instance)) return true;
 
             ___m_sendQueue = new Queue<byte[]>(___m_sendQueue.Select(p => Compress(p)));
             return true;
@@ -27,24 +26,22 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.Recv))]
         [HarmonyPostfix]
         private static void Steamworks_ReceiveCompressedPackages(ref ZPackage __result, ref ZSteamSocket __instance) {
-            if (!__instance.IsConnected()) { return; }
+            if (!__instance.IsConnected()) return;
 
-            ZNetPeer peer = BN_Utils.GetPeer(__instance);
-
-            if (__result == null) { return; }
+            if (__result == null) return;
 
             byte[] decompressedResult;
             try {
                 decompressedResult = Decompress(__result.GetArray());
                 __result = new ZPackage(decompressedResult);
-                if (!CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Compression (Steamworks): Received unexpected compressed message from {BN_Utils.GetPeerName(peer)}; assuming compression started");
-                    CompressionStatus.SetReceiveCompressionStarted(peer, true);
+                if (!CompressionStatus.GetReceiveCompressionStarted(__instance)) {
+                    BN_Logger.LogWarning($"Compression (Steamworks): Received unexpected compressed message from {BN_Utils.GetPeerName(__instance)}");
+                    // CompressionStatus.SetReceiveCompressionStarted(__instance, true);
                 }
             } catch {
-                if (CompressionStatus.GetReceiveCompressionStarted(peer)) {
-                    BN_Logger.LogWarning($"Compression (Steamworks): Could not decompress message from {BN_Utils.GetPeerName(peer)}; assuming compression stopped");
-                    CompressionStatus.SetReceiveCompressionStarted(peer, false);
+                if (CompressionStatus.GetReceiveCompressionStarted(__instance)) {
+                    BN_Logger.LogWarning($"Compression (Steamworks): Could not decompress message from {BN_Utils.GetPeerName(__instance)}");
+                    // CompressionStatus.SetReceiveCompressionStarted(__instance, false);
                 }
             }
         }
