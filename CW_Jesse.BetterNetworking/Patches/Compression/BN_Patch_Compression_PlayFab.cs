@@ -47,7 +47,7 @@ namespace CW_Jesse.BetterNetworking {
                 try {
                     ___m_outCompress.Enqueue(Compress(___m_inCompress.Dequeue()));
                 } catch {
-                    BN_Logger.LogError($"Failed compression");
+                    BN_Logger.LogError($"PlayFab: Failed BN compress");
                 }
             }
 
@@ -58,14 +58,23 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(PlayFabZLibWorkQueue), "DoUncompress")]
         [HarmonyPrefix]
         private static bool PlayFab_Decompress(ref PlayFabZLibWorkQueue __instance, ref Queue<byte[]> ___m_inDecompress, ref Queue<byte[]> ___m_outDecompress) {
-            if (!workQueueSockets.TryGetValue(__instance, out ZPlayFabSocket socket)) return true;
-            if (!CompressionStatus.GetReceiveCompressionStarted(socket)) return true;
+            bool bnCompression = false;
+            if (workQueueSockets.TryGetValue(__instance, out ZPlayFabSocket socket)) {
+                bnCompression = CompressionStatus.GetReceiveCompressionStarted(socket);
+            }
             
             while (___m_inDecompress.Count > 0) {
+                byte[] dataToDecompress = ___m_inDecompress.Dequeue();
                 try {
-                    ___m_outDecompress.Enqueue(Decompress(___m_inDecompress.Dequeue()));
+                    ___m_outDecompress.Enqueue(Decompress(dataToDecompress));
                 } catch {
-                    BN_Logger.LogError($"Failed decompression");
+                    if (bnCompression) BN_Logger.LogInfo($"PlayFab: Failed BN decompress");
+                    try {
+                        ___m_outDecompress.Enqueue((byte[])AccessTools.Method(typeof(PlayFabZLibWorkQueue), "UncompressOnThisThread").Invoke(__instance, new object[] { dataToDecompress }));
+                    } catch {
+                        BN_Logger.LogInfo($"PlayFab: Failed vanilla decompress; keeping data (vanilla behaviour is to throw it away)");
+                        ___m_outDecompress.Enqueue(dataToDecompress);
+                    }
                 }
             }
 

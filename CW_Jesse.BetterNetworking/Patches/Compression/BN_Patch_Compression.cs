@@ -74,16 +74,17 @@ namespace CW_Jesse.BetterNetworking {
             CompressionStatus.AddSocket(peer.m_socket);
 
             RegisterRPCs(peer);
+            SendCompressionVersion(peer.m_rpc);
         }
 
-
-        [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
-        [HarmonyPostfix]
-        private static void OnPeerInfoReceived(ref ZRpc rpc) {
-            SendCompressionVersion(rpc);
-        }
+        // /// <summary>
+        // /// if send compression version is here, BN compression starts after correct password + vanilla compression started
+        // /// </summary>
+        // [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
+        // [HarmonyPostfix]
+        // private static void OnPeerInfoReceived(ref ZRpc rpc) {
+        // }
         
-
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
         [HarmonyPostfix]
         private static void OnDisconnect(ZNetPeer peer) {

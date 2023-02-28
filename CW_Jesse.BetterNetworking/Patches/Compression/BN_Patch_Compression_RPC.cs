@@ -62,7 +62,6 @@ namespace CW_Jesse.BetterNetworking {
         private static void SendCompressionStarted(ZRpc rpc, bool started) {
             if (ZNet.instance == null) { return; }
             if (CompressionStatus.GetSendCompressionStarted(rpc.GetSocket()) == started) { return; } // don't do anything if nothing's changed
-            Flush(rpc);
             rpc.Invoke(RPC_COMPRESSION_STARTED, new object[] { started });
             Flush(rpc);
             CompressionStatus.SetSendCompressionStarted(rpc.GetSocket(), started);
@@ -80,9 +79,7 @@ namespace CW_Jesse.BetterNetworking {
             }
         }
         private static void RPC_CompressionStarted(ZRpc rpc, bool peerCompressionStarted) {
-            Flush(rpc);
             CompressionStatus.SetReceiveCompressionStarted(rpc.GetSocket(), peerCompressionStarted);
-            Flush(rpc);
             BN_Logger.LogMessage($"Compression: Compression from {BN_Utils.GetPeerName(rpc.GetSocket())}: {peerCompressionStarted}");
         }
     }
