@@ -2,6 +2,7 @@
 - PlayFab: fixed failing to work in some cases
 - PlayFab: better handling of disconnections
 - PlayFab: simplified compression code
+- PlayFab: fixed error in vanilla Valheim where data could be lost while connecting
 - Steamworks: fixed failing to work in some cases
 ### 2.1.3
 - reverted to 2.1.1; for now, avoid using Alt+F4 to close the game
