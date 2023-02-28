@@ -4,7 +4,7 @@ using static CW_Jesse.BetterNetworking.BN_Patch_Compression;
 namespace CW_Jesse.BetterNetworking {
     internal static class CompressionStatus {
 
-        private const int COMPRESSION_VERSION = 5;
+        private const int COMPRESSION_VERSION = 6;
         private const int COMPRESSION_VERSION_UNKNOWN = 0;
 
         public static SocketCompressionStatus ourStatus = new SocketCompressionStatus() { version = COMPRESSION_VERSION, compressionEnabled = BetterNetworking.configCompressionEnabled.Value == Options_NetworkCompression.@true };
