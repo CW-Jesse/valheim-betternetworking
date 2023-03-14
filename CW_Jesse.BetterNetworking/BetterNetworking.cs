@@ -24,6 +24,7 @@ namespace CW_Jesse.BetterNetworking {
 
         public static ConfigEntry<BN_Logger.Options_Logger_LogLevel> configLogMessages;
         public static ConfigEntry<BN_Patch_ForceCrossplay.Options_ForceCrossplay> configForceCrossplay;
+        public static ConfigEntry<int> configPlayerLimit;
         public static ConfigEntry<BN_Patch_Compression.Options_NetworkCompression> configCompressionEnabled;
         public static ConfigEntry<BN_Patch_UpdateRate.Options_NetworkUpdateRates> configNetworkUpdateRate;
         public static ConfigEntry<BN_Patch_SendRate.Options_NetworkSendRateMin> configNetworkSendRateMin;
@@ -78,6 +79,7 @@ namespace CW_Jesse.BetterNetworking {
                     isDedicated = true;
 
                     BN_Patch_ForceCrossplay.InitConfig(config);
+                    BN_Patch_ChangePlayerLimit.InitConfig(config);
                 }
             }
 
