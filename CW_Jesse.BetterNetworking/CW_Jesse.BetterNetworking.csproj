@@ -17,23 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="dict\small" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="5.7.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets></IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Fody" Version="6.6.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets></IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.6.4" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\libs-Valheim\0Harmony.dll</HintPath>
       <Private>False</Private>
@@ -139,6 +122,10 @@
     <Reference Update="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="dict\small" />
   </ItemGroup>
 
 </Project>
