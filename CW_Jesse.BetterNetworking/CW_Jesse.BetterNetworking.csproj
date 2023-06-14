@@ -29,7 +29,7 @@
       <HintPath>..\libs-Valheim\assembly_utils.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="assembly_valheim">
+    <Reference Include="assembly_valheim" Publicize="true">
       <HintPath>..\libs-Valheim\client\assembly_valheim.dll</HintPath>
       <Private>False</Private>
     </Reference>
