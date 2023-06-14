@@ -1,3 +1,7 @@
+### 2.3.1
+- compatibility with Valheim 0.216.9
+### 2.3.0
+- allow changing player limit for dedicated servers
 ### 2.2.1
 - bugfix: more stable when some people have compression/BN disabled
 - bugfix: no longer spams log when unexpected messages received

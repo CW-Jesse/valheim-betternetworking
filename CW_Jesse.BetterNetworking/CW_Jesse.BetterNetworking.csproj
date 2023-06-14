@@ -5,10 +5,11 @@
     <Title>Better Networking</Title>
     <Copyright>CW_Jesse 2023</Copyright>
     <Company>CW_Jesse</Company>
-    <RepositoryUrl>https://www.nexusmods.com/valheim/mods/1570</RepositoryUrl>
-    <Version>2.1.2</Version>
-    <AssemblyVersion>2.2.1</AssemblyVersion>
-    <FileVersion>2.2.1</FileVersion>
+    <RepositoryUrl>https://github.com/CW-Jesse/valheim-betternetworking</RepositoryUrl>
+    <Version>2.3.1</Version>
+    <AssemblyVersion>2.3.1</AssemblyVersion>
+    <FileVersion>2.3.1</FileVersion>
+    <PackageProjectUrl>https://valheim.thunderstore.io/package/CW_Jesse/BetterNetworking_Valheim/</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

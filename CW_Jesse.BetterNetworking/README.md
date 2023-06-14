@@ -59,6 +59,7 @@ _Educational links_
 
 _Thank you_
 
+* [Cheb](https://github.com/jpw1991) for [contributing code](https://github.com/CW-Jesse/valheim-betternetworking/pull/17) (Check out ChebsNecromancy!)
 * nightshade221 (Max) for being a patron and providing a community!
 * Frostsorrow for QA and community assistance!
 * Tquilarius for being a patron!
