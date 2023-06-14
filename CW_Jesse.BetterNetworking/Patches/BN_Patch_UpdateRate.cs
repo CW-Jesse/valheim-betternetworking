@@ -33,7 +33,6 @@ namespace CW_Jesse.BetterNetworking {
         [HarmonyPatch(typeof(ZDOMan))]
         class NetworkUpdateFrequency_Patch {
 
-            [HarmonyPatch("SendZDOToPeers")]
             [HarmonyPatch("SendZDOToPeers2")]
             static void Prefix(ref float dt) {
                 switch (BetterNetworking.configNetworkUpdateRate.Value) {
