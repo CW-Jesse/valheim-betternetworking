@@ -147,7 +147,7 @@ namespace CW_Jesse.BetterNetworking {
                             IntPtr.Zero,
                             out dataType,
                             pinnedVal.AddrOfPinnedObject(),
-                            out valSize
+                            ref valSize
                         );
                     } else {
                         SteamNetworkingUtils.GetConfigValue(
@@ -156,7 +156,7 @@ namespace CW_Jesse.BetterNetworking {
                             IntPtr.Zero,
                             out dataType,
                             pinnedVal.AddrOfPinnedObject(),
-                            out valSize
+                            ref valSize
                         );
                     }
                 } catch {
