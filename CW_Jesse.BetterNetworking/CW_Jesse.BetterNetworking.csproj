@@ -39,8 +39,8 @@
       <HintPath>..\libs-Valheim\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="assembly_steamworks">
-      <HintPath>..\libs-Valheim\client\assembly_steamworks.dll</HintPath>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>..\libs-Valheim\client\com.rlabrecque.steamworks.net.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="assembly_utils">
