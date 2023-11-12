@@ -13,7 +13,7 @@ using Steamworks;
 
 namespace CW_Jesse.BetterNetworking {
 
-    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "2.3.1")]
+    [BepInPlugin("CW_Jesse.BetterNetworking", "Better Networking", "2.3.2")]
     [BepInIncompatibility("org.bepinex.plugins.network")]
     [BepInIncompatibility("be.sebastienvercammen.valheim.netcompression")]
     [BepInIncompatibility("com.github.dalayeth.Networkfix")]

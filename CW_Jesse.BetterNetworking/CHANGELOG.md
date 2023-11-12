@@ -1,3 +1,5 @@
+### 2.3.2
+- compatibility with Valheim 0.217.28
 ### 2.3.1
 - compatibility with Valheim 0.216.9
 ### 2.3.0

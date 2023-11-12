@@ -6,9 +6,9 @@
     <Copyright>CW_Jesse 2023</Copyright>
     <Company>CW_Jesse</Company>
     <RepositoryUrl>https://github.com/CW-Jesse/valheim-betternetworking</RepositoryUrl>
-    <Version>2.3.1</Version>
-    <AssemblyVersion>2.3.1</AssemblyVersion>
-    <FileVersion>2.3.1</FileVersion>
+    <Version>2.3.2</Version>
+    <AssemblyVersion>2.3.2</AssemblyVersion>
+    <FileVersion>2.3.2</FileVersion>
     <PackageProjectUrl>https://valheim.thunderstore.io/package/CW_Jesse/BetterNetworking_Valheim/</PackageProjectUrl>
   </PropertyGroup>
 

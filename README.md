@@ -4,7 +4,8 @@ For more details, see the README.md in CW_Jesse.BetterNetworking.
 
 _Thank you_
 
-* [Cheb](https://github.com/jpw1991) for [contributing code](https://github.com/CW-Jesse/valheim-betternetworking/pull/17) (Check out ChebsNecromancy!)
+* [Joshua Woods (Cheb)](https://github.com/jpw1991) for [contributing code](https://github.com/CW-Jesse/valheim-betternetworking/pull/17) (Check out ChebsNecromancy!)
+* [William Seligmann (jsza)](https://github.com/jsza) for [contributing code](https://github.com/CW-Jesse/valheim-betternetworking/pull/19)
 * nightshade221 (Max) for being a patron and providing a community!
 * Frostsorrow for QA and community assistance!
 * Tquilarius for being a patron!
